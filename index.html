@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guahh</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Math.js for better calculation support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.js"></script>
+</head>
+
+<body>
+    <div class="background-spin"></div>
+
+    <div class="app-container">
+        <header class="search-header">
+            <form id="form" class="search-form">
+                <input type="text" id="input" placeholder="Ask Guahh..." autocomplete="off">
+            </form>
+            <div class="action-chips">
+                <button class="chip" data-cmd="What time is it?">Time</button>
+                <button class="chip" data-cmd="What's the weather?">Weather</button>
+                <button class="chip" data-cmd="Tell me a joke">Joke</button>
+                <button class="chip" data-cmd="Flip a coin">Coin Flip</button>
+                <button class="chip" data-cmd="Roll a dice">Roll Dice</button>
+                <button class="chip" data-cmd="Random fact">Fact</button>
+            </div>
+        </header>
+
+        <main id="results-container" class="results-area">
+            <!-- Dynamic Result Panels will go here -->
+            <div class="welcome-text">
+                <p>Try "Calculate 25 * 4", "Weather in London", or "Flip a coin"</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="guahh.js"></script>
+</body>
+
+</html>
