@@ -2,10 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Crucial for mobile scaling and safe area layouts -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <title>iPhone Call Screen Prop</title>
-    <!-- Import official Google Material Symbols (Outlined & Rounded variable font support) -->
+
+    <!-- PWA / iOS Home Screen App Capabilities -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Call Prop">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS App Icons (Replace URLs with your actual icon image locations) -->
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/000000/FFFFFF?text=Call">
+    <link rel="apple-touch-startup-image" href="https://via.placeholder.com/512/000000/FFFFFF?text=Call">
+
+    <!-- Import official Google Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
     <style>
         :root {
             --ios-red: #FF3B30;
@@ -13,19 +27,22 @@
             --ios-gray: rgba(255, 255, 255, 0.15);
         }
 
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 100%;
             width: 100vw;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
             user-select: none;
             -webkit-user-select: none;
             overflow: hidden;
+            /* Prevents overscroll bounce physics in Safari standalone mode */
+            overscroll-behavior: none; 
+            position: fixed; 
         }
 
         /* iOS Blue-Green blurred background */
@@ -39,6 +56,7 @@
             overflow: hidden;
             color: #fff;
             box-sizing: border-box;
+            /* Leverages the iPhone's Dynamic Island/Notch dynamic spacing */
             padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
         }
         
@@ -60,7 +78,7 @@
 
         .contact-info {
             text-align: center;
-            margin-top: 12vh;
+            margin-top: 14vh; /* Adjusted slightly to clear the translucent iOS status bar */
             position: relative;
             z-index: 1;
         }
@@ -79,7 +97,7 @@
             letter-spacing: -0.2px;
         }
 
-        #incoming-view {
+        #incoming-view, #active-view {
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -89,6 +107,11 @@
             width: 100%;
             box-sizing: border-box;
             z-index: 1;
+            padding-bottom: env(safe-area-inset-bottom); /* Fixes button cutoff near Home Bar */
+        }
+
+        #active-view {
+            display: none;
         }
 
         .incoming-actions {
@@ -97,18 +120,6 @@
             display: flex;
             justify-content: space-around;
             padding: 0 10vw;
-        }
-
-        #active-view {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            box-sizing: border-box;
-            z-index: 1;
         }
 
         .controls-grid {
@@ -166,24 +177,20 @@
             -webkit-backdrop-filter: blur(20px);
         }
 
-        /* Configures Google Material Symbols */
         .material-symbols-outlined {
             color: #fff;
             font-size: 32px;
             font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 200, 'opsz' 24;
         }
 
-        /* Contacts icon uses Filled State but keeps thin silhouette edges */
         .icon-contacts {
             font-variation-settings: 'FILL' 1, 'wght' 200, 'GRAD' 200, 'opsz' 24;
         }
 
-        /* Call Buttons require strict Filled configurations */
         .icon-call-filled {
             font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 200, 'opsz' 24;
         }
 
-        /* Active Toggle styles */
         .control-item.active .control-icon {
             background-color: #fff;
         }
@@ -191,7 +198,6 @@
             color: #000;
         }
 
-        /* Hangup Rotation setup */
         .icon-flip {
             transform: rotate(135deg);
         }
@@ -212,7 +218,6 @@
             z-index: 100;
             opacity: 0;
             pointer-events: none;
-            /* Quicker transition fade down to black */
             transition: opacity 0.12s ease-out;
         }
     </style>
@@ -252,42 +257,36 @@
             </div>
 
             <div class="controls-grid">
-                <!-- Mute -->
                 <div class="control-item" onclick="this.classList.toggle('active')">
                     <div class="control-icon">
                         <span class="material-symbols-outlined">mic_off</span>
                     </div>
                     <span class="control-label">mute</span>
                 </div>
-                <!-- Keypad -->
                 <div class="control-item" onclick="this.classList.toggle('active')">
                     <div class="control-icon">
                         <span class="material-symbols-outlined">apps</span>
                     </div>
                     <span class="control-label">keypad</span>
                 </div>
-                <!-- Speaker -->
                 <div class="control-item" onclick="this.classList.toggle('active')">
                     <div class="control-icon">
                         <span class="material-symbols-outlined">volume_up</span>
                     </div>
                     <span class="control-label">speaker</span>
                 </div>
-                <!-- Add Call -->
                 <div class="control-item">
                     <div class="control-icon">
                         <span class="material-symbols-outlined">add</span>
                     </div>
                     <span class="control-label">add call</span>
                 </div>
-                <!-- FaceTime -->
                 <div class="control-item">
                     <div class="control-icon">
                         <span class="material-symbols-outlined">videocam</span>
                     </div>
                     <span class="control-label">FaceTime</span>
                 </div>
-                <!-- Contacts (Account Circle) -->
                 <div class="control-item">
                     <div class="control-icon">
                         <span class="material-symbols-outlined icon-contacts">account_circle</span>
@@ -316,6 +315,11 @@
         const blackScreen = document.getElementById('black-screen');
         const timerDisplay = document.getElementById('timer');
         const controlItems = document.querySelectorAll('.control-item');
+
+        // Prevent general touch dragging scrolling behavior on the document level 
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
 
         function formatTime(totalSeconds) {
             const minutes = Math.floor(totalSeconds / 60);
@@ -348,7 +352,6 @@
             blackScreen.style.opacity = '1';
             blackScreen.style.pointerEvents = 'auto';
 
-            // Extends duration on the black screen to exactly 7 seconds (7000ms)
             setTimeout(() => {
                 resetCallUI();
                 blackScreen.style.opacity = '0';
