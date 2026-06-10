@@ -2,368 +2,531 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Crucial for mobile scaling and safe area layouts -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <title>iPhone Call Screen Prop</title>
-
-    <!-- PWA / iOS Home Screen App Capabilities -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Call Prop">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <!-- iOS App Icons (Replace URLs with your actual icon image locations) -->
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/000000/FFFFFF?text=Call">
-    <link rel="apple-touch-startup-image" href="https://via.placeholder.com/512/000000/FFFFFF?text=Call">
-
-    <!-- Import official Google Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guahh Assistant</title>
+    <!-- Include the SiriWave Library -->
+    <script src="https://unpkg.com/siriwave/dist/siriwave.umd.min.js"></script>
     <style>
-        :root {
-            --ios-red: #FF3B30;
-            --ios-green: #34C759;
-            --ios-gray: rgba(255, 255, 255, 0.15);
-        }
-
-        html, body {
+        body {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            width: 100vw;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            overflow: hidden;
-            /* Prevents overscroll bounce physics in Safari standalone mode */
-            overscroll-behavior: none; 
-            position: fixed; 
-        }
-
-        /* iOS Blue-Green blurred background */
-        .iphone-screen {
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-            background: linear-gradient(145deg, #0b252e 0%, #061c14 50%, #000000 100%);
-            position: relative;
-            overflow: hidden;
-            color: #fff;
-            box-sizing: border-box;
-            /* Leverages the iPhone's Dynamic Island/Notch dynamic spacing */
-            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
-        }
-        
-        .iphone-screen::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            left: -20%;
-            width: 140%;
-            height: 140%;
-            background: 
-                radial-gradient(circle at 20% 30%, #1a5268 0%, transparent 45%),
-                radial-gradient(circle at 80% 40%, #144931 0%, transparent 50%);
-            filter: blur(60px);
-            opacity: 0.85;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .contact-info {
-            text-align: center;
-            margin-top: 14vh; /* Adjusted slightly to clear the translucent iOS status bar */
-            position: relative;
-            z-index: 1;
-        }
-
-        .contact-name {
-            font-size: 36px;
-            font-weight: 300;
-            letter-spacing: -0.5px;
-            margin: 0 0 4px 0;
-        }
-
-        .status-text {
-            font-size: 17px;
-            color: rgba(255, 255, 255, 0.55);
-            font-weight: 400;
-            letter-spacing: -0.2px;
-        }
-
-        #incoming-view, #active-view {
+            background-color: #000000;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+        }
+
+        #start-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            box-sizing: border-box;
-            z-index: 1;
-            padding-bottom: env(safe-area-inset-bottom); /* Fixes button cutoff near Home Bar */
-        }
-
-        #active-view {
-            display: none;
-        }
-
-        .incoming-actions {
-            margin-top: auto;
-            margin-bottom: 8vh;
-            display: flex;
-            justify-content: space-around;
-            padding: 0 10vw;
-        }
-
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 3.5vh 4vw;
-            padding: 0 12vw;
-            margin-top: auto;
-            margin-bottom: 5vh;
-        }
-
-        .action-button-container, .control-item {
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn-label, .control-label {
-            font-size: 13px;
-            color: #fff;
-            margin-top: 8px;
-            font-weight: 400;
-            letter-spacing: -0.1px;
-        }
-
-        .control-label {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 12px;
-        }
-
-        .btn-circle {
-            width: 76px;
-            height: 76px;
-            border-radius: 50%;
-            display: flex;
             justify-content: center;
             align-items: center;
-            border: none;
-        }
-
-        .btn-decline { background-color: var(--ios-red); }
-        .btn-accept { background-color: var(--ios-green); }
-
-        .control-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background-color: var(--ios-gray);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-
-        .material-symbols-outlined {
-            color: #fff;
-            font-size: 32px;
-            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 200, 'opsz' 24;
-        }
-
-        .icon-contacts {
-            font-variation-settings: 'FILL' 1, 'wght' 200, 'GRAD' 200, 'opsz' 24;
-        }
-
-        .icon-call-filled {
-            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 200, 'opsz' 24;
-        }
-
-        .control-item.active .control-icon {
-            background-color: #fff;
-        }
-        .control-item.active .control-icon .material-symbols-outlined {
-            color: #000;
-        }
-
-        .icon-flip {
-            transform: rotate(135deg);
-        }
-
-        .end-call-wrapper {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 8vh;
-        }
-
-        #black-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
             z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        #start-overlay h1 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: #1ba8fc;
+        }
+
+        #start-overlay p {
+            color: #bbb;
+            font-size: 1rem;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            color: #f673e1;
+            font-weight: bold;
+        }
+
+        /* Container for the SiriWave library */
+        #siri-container {
+            width: 100vw;
+            height: 300px;
+            display: none; /* Hidden until started */
+        }
+
+        /* Subtitle Text */
+        #response-text {
+            position: absolute;
+            bottom: 20vh;
+            font-size: 1.4rem;
+            font-weight: 300;
+            text-align: center;
+            max-width: 700px;
+            line-height: 1.5;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.12s ease-out;
+            transform: translateY(20px) scale(0.95);
+            transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+            padding: 0 20px;
+        }
+
+        #response-text.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
     </style>
 </head>
 <body>
 
-    <div class="iphone-screen">
-        
-        <!-- Incoming Call UI -->
-        <div id="incoming-view">
-            <div class="contact-info">
-                <h1 class="contact-name">Boss</h1>
-                <div class="status-text">mobile</div>
-            </div>
-            
-            <div class="incoming-actions">
-                <div class="action-button-container" onclick="declineCall()">
-                    <div class="btn-circle btn-decline">
-                        <span class="material-symbols-outlined icon-call-filled icon-flip">call</span>
-                    </div>
-                    <span class="btn-label">Decline</span>
-                </div>
-                <div class="action-button-container" onclick="answerCall()">
-                    <div class="btn-circle btn-accept">
-                        <span class="material-symbols-outlined icon-call-filled">call</span>
-                    </div>
-                    <span class="btn-label">Accept</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Active Call UI -->
-        <div id="active-view">
-            <div class="contact-info">
-                <h1 class="contact-name">Boss</h1>
-                <div class="status-text" id="timer">00:00</div>
-            </div>
-
-            <div class="controls-grid">
-                <div class="control-item" onclick="this.classList.toggle('active')">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined">mic_off</span>
-                    </div>
-                    <span class="control-label">mute</span>
-                </div>
-                <div class="control-item" onclick="this.classList.toggle('active')">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined">apps</span>
-                    </div>
-                    <span class="control-label">keypad</span>
-                </div>
-                <div class="control-item" onclick="this.classList.toggle('active')">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined">volume_up</span>
-                    </div>
-                    <span class="control-label">speaker</span>
-                </div>
-                <div class="control-item">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined">add</span>
-                    </div>
-                    <span class="control-label">add call</span>
-                </div>
-                <div class="control-item">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined">videocam</span>
-                    </div>
-                    <span class="control-label">FaceTime</span>
-                </div>
-                <div class="control-item">
-                    <div class="control-icon">
-                        <span class="material-symbols-outlined icon-contacts">account_circle</span>
-                    </div>
-                    <span class="control-label">contacts</span>
-                </div>
-            </div>
-
-            <div class="end-call-wrapper">
-                <div class="btn-circle btn-decline" onclick="endCall()">
-                    <span class="material-symbols-outlined icon-call-filled icon-flip">call</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Fade Overlay Layer -->
-        <div id="black-screen"></div>
+    <div id="start-overlay">
+        <h1>Click to wake Guahh</h1>
+        <p>To remember mic permission forever, make sure you open this file using a <span class="highlight">Local Web Server</span> (like VS Code Live Server) instead of just double-clicking the HTML file!</p>
     </div>
+    
+    <!-- SiriWave Library Target Container -->
+    <div id="siri-container"></div>
+    
+    <div id="response-text"></div>
 
     <script>
-        let callTimerInterval;
-        let callSeconds = 0;
+        const overlay = document.getElementById('start-overlay');
+        const siriContainer = document.getElementById('siri-container');
+        const responseText = document.getElementById('response-text');
 
-        const incomingView = document.getElementById('incoming-view');
-        const activeView = document.getElementById('active-view');
-        const blackScreen = document.getElementById('black-screen');
-        const timerDisplay = document.getElementById('timer');
-        const controlItems = document.querySelectorAll('.control-item');
+        // Activation sound
+        const activationSound = new Audio('https://raw.githubusercontent.com/guahhinc/guahhai/main/jbl_begin_sae.mp3');
 
-        // Prevent general touch dragging scrolling behavior on the document level 
-        document.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
+        // State Variables
+        let isSpeaking = false;
+        let isListeningState = false; 
+        let idleTimeout = null;
+        let micPermissionGranted = false;
 
-        function formatTime(totalSeconds) {
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // SiriWave Variables
+        let siriWave;
+        let currentAmplitude = 0.1;
+        let currentSpeed = 0.03;
+
+        // Smoothly animate the SiriWave between Idle and Active states
+        function animateWave() {
+            let targetAmplitude = (isListeningState || isSpeaking) ? 1.5 : 0.1;
+            let targetSpeed = (isListeningState || isSpeaking) ? 0.15 : 0.03;
+
+            currentAmplitude += (targetAmplitude - currentAmplitude) * 0.1;
+            currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+
+            if (siriWave) {
+                siriWave.setAmplitude(currentAmplitude);
+                siriWave.setSpeed(currentSpeed);
+            }
+
+            requestAnimationFrame(animateWave);
         }
 
-        function answerCall() {
-            incomingView.style.display = 'none';
-            activeView.style.display = 'flex';
-            callSeconds = 0;
-            timerDisplay.textContent = "00:00";
+        // --- SPEECH SYNTHESIS (VOICE) ---
+        let availableVoices = [];
+        window.speechSynthesis.onvoiceschanged = () => availableVoices = window.speechSynthesis.getVoices();
+
+        function getBestVoice() {
+            if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
             
-            callTimerInterval = setInterval(() => {
-                callSeconds++;
-                timerDisplay.textContent = formatTime(callSeconds);
-            }, 1000);
+            // 1. Try to find an Australian Voice first
+            let auVoice = availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Female')) || 
+                          availableVoices.find(v => v.lang === 'en-AU');
+            if (auVoice) return auVoice;
+
+            // 2. Fallbacks
+            const preferredNames = ['Aria', 'Jenny', 'Google UK English Female', 'Google US English', 'Samantha'];
+            for (let name of preferredNames) {
+                const found = availableVoices.find(v => v.name.includes(name));
+                if (found) return found;
+            }
+            return availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) || availableVoices[0];
         }
 
-        function declineCall() {
-            triggerBlackScreen();
+        function speak(text) {
+            return new Promise((resolve) => {
+                isSpeaking = true;
+                
+                responseText.textContent = text;
+                responseText.classList.add('visible');
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.voice = getBestVoice();
+                utterance.pitch = 1.0;
+                utterance.rate = 1.05;
+
+                utterance.onend = () => {
+                    isSpeaking = false;
+                    setTimeout(() => {
+                        if (!isSpeaking) responseText.classList.remove('visible');
+                    }, 3000);
+                    resolve();
+                };
+
+                utterance.onerror = () => { isSpeaking = false; resolve(); };
+                window.speechSynthesis.speak(utterance);
+            });
         }
 
-        function endCall() {
-            clearInterval(callTimerInterval);
-            triggerBlackScreen();
+        // --- EXTENDED APP DICTIONARY ---
+        const appProtocols = {
+            'steam': 'steam://open/main',
+            'discord': 'discord://',
+            'vs code': 'vscode://',
+            'visual studio code': 'vscode://',
+            'spotify': 'spotify://',
+            'epic games': 'com.epicgames.launcher://',
+            'calculator': 'ms-calculator:',
+            'clock': 'ms-clock:',
+            'word': 'ms-word:',
+            'excel': 'ms-excel:',
+            'powerpoint': 'ms-powerpoint:',
+            'whatsapp': 'whatsapp://',
+            'telegram': 'tg://',
+            'zoom': 'zoommtg://',
+            'slack': 'slack://',
+            'netflix': 'netflix://',
+            'file explorer': 'explorer:',
+            'settings': 'ms-settings:',
+            'paint': 'ms-paint:',
+            'camera': 'microsoft.windows.camera:',
+            'maps': 'bingmaps:',
+            'weather app': 'bingweather:'
+        };
+
+        // --- SMARTER BRAIN & COMMAND LOGIC ---
+        async function processCommand(command) {
+            isListeningState = true; 
+
+            // --- 1. GENERAL CONVERSATION ---
+            if (command === 'yo' || command === 'hello' || command === 'hi' || command === 'hey' || command === 'gday' || command === "g'day") {
+                const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
+                await speak(greetings[Math.floor(Math.random() * greetings.length)]);
+            }
+            else if (command.includes('how are you') || command.includes("how's it going") || command.includes('how do you do')) {
+                await speak("I'm doing wonderfully, thanks for asking! I'm ready to assist you.");
+            }
+            else if (command.includes('what can you do') || command.includes('what are your features') || command.includes('help me')) {
+                await speak("I can open apps on your PC, search the web, calculate math, tell you the time, check the weather, draft emails, play YouTube videos, and tell jokes.");
+            }
+            else if (command.includes('who are you') || command.includes('what is your name')) {
+                await speak("I am Guahh Assistant, your intelligent companion.");
+            }
+            else if (command.includes('thank you') || command === 'thanks' || command === 'cheers') {
+                await speak("You're very welcome! Let me know if you need anything else.");
+            }
+
+            // --- 2. JOKES & FACTS ---
+            else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
+                try {
+                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+                    const data = await res.json();
+                    await speak(data.joke);
+                } catch (e) {
+                    await speak("Why did the computer go to the doctor? Because it had a virus!");
+                }
+            }
+            else if (command.includes('tell me a fact') || command.includes('interesting fact')) {
+                try {
+                    const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
+                    const data = await res.json();
+                    await speak(data.text);
+                } catch (e) {
+                    await speak("Bananas are curved because they grow towards the sun.");
+                }
+            }
+
+            // --- 3. YOUTUBE VIDEO PLAYBACK ---
+            else if (command.includes('play') && command.includes('youtube')) {
+                const query = command.replace('play', '').replace('on youtube', '').replace('in youtube', '').trim();
+                await speak(`Playing ${query} on YouTube.`);
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+            }
+
+            // --- 4. ROBLOX ---
+            else if (command.includes('in roblox')) {
+                const match = command.match(/open (.+) in roblox/i);
+                if (match) {
+                    const gameName = match[1].trim();
+                    await speak(`Searching Roblox for ${gameName}...`);
+                    try {
+                        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`)}`;
+                        const res = await fetch(proxyUrl);
+                        const data = JSON.parse((await res.json()).contents);
+                        if (data && data.data && data.data.length > 0) {
+                            await speak(`Launching ${data.data[0].name} in Roblox!`);
+                            window.location.href = `roblox://experiences/start?placeId=${data.data[0].placeId}`;
+                        } else throw new Error("Not found");
+                    } catch (e) {
+                        await speak(`Opening the search page for ${gameName} on Roblox.`);
+                        window.open(`https://www.roblox.com/discover/?Keyword=${encodeURIComponent(gameName)}`, '_blank');
+                    }
+                }
+            }
+            
+            // --- 5. DICTIONARY DEFINITIONS ---
+            else if (command.startsWith('define') || command.includes('definition of')) {
+                const word = command.replace(/(define|what is the definition of)/g, '').trim();
+                try {
+                    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+                    const data = await res.json();
+                    if (data && data[0] && data[0].meanings[0].definitions[0]) {
+                        await speak(`The definition of ${word} is: ${data[0].meanings[0].definitions[0].definition}`);
+                    } else throw new Error("Not found");
+                } catch (e) {
+                    await speak(`I couldn't find a dictionary definition for ${word}.`);
+                }
+            }
+
+            // --- 6. IMAGES & SEARCH ---
+            else if (command.includes('images of') || command.includes('show pictures of')) {
+                const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
+                await speak(`Pulling up images of ${query}.`);
+                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
+            }
+            else if (command.startsWith('search') || command.includes('search for')) {
+                const query = command.replace(/(search for|search)/g, '').trim();
+                await speak(`Here is what I found for ${query}.`);
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+            }
+
+            // --- 7. TIME & DATE ---
+            else if (command.includes('time') && !command.includes('what is')) {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                await speak(`The time is currently ${time}.`);
+            } 
+            else if (command.includes('date') || command.includes('day is it')) {
+                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                await speak(`Today is ${date}.`);
+            }
+            
+            // --- 8. WEATHER ---
+            else if (command.includes('weather')) {
+                let city = "Melbourne"; 
+                const match = command.match(/weather in ([a-zA-Z\s]+)/);
+                if (match) city = match[1].trim();
+                try {
+                    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
+                    const geoData = await geoRes.json();
+                    if (!geoData.results) throw new Error("Not found");
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geoData.results[0].latitude}&longitude=${geoData.results[0].longitude}&current_weather=true`);
+                    const temp = (await weatherRes.json()).current_weather.temperature;
+                    await speak(`It is ${temp} degrees in ${geoData.results[0].name}.`);
+                } catch (e) {
+                    await speak(`I couldn't fetch the weather for ${city}.`);
+                }
+            } 
+
+            // --- 9. MATH & WIKIPEDIA ---
+            else if (command.includes('what is') || command.includes('who is') || command.includes('calculate')) {
+                let isMath = false;
+                let mathExpr = command.replace(/(what is|calculate)/g, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
+                
+                if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && mathExpr.length > 0) {
+                    try {
+                        const result = new Function('return ' + mathExpr)();
+                        await speak(`The answer is ${result}.`);
+                        isMath = true;
+                    } catch(e) {}
+                }
+
+                if (!isMath) {
+                    const query = command.replace('who is ', '').replace('what is ', '').trim();
+                    try {
+                        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                        const data = await res.json();
+                        if (data.extract) {
+                            const sentences = data.extract.split('. ');
+                            const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
+                            await speak(shortSummary);
+                        } else {
+                            await speak(`I'm pulling up a web search for ${query}.`);
+                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                        }
+                    } catch (e) {
+                        await speak(`I'm having trouble connecting to my knowledge base.`);
+                    }
+                }
+            }
+            
+            // --- 10. OPEN APPS ---
+            else if (command.includes('open') || command.includes('launch')) {
+                let appFound = false;
+                for (const [appName, protocol] of Object.entries(appProtocols)) {
+                    if (command.includes(appName)) {
+                        window.location.href = protocol;
+                        await speak(`Opening ${appName}.`);
+                        appFound = true;
+                        break;
+                    }
+                }
+                if (!appFound) {
+                    const words = command.split(' ');
+                    const openIndex = words.findIndex(w => w === 'open' || w === 'launch');
+                    if (openIndex !== -1 && words[openIndex + 1]) {
+                        const target = words.slice(openIndex + 1).join('').replace(/\s/g, '');
+                        window.open(`https://www.${target}.com`, '_blank');
+                        await speak(`Opening ${target} on the web.`);
+                    }
+                }
+            }
+
+            // --- 11. EMAIL ---
+            else if (command.includes('email') || command.includes('draft')) {
+                window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
+                await speak("Opening Outlook to draft a new message.");
+            }
+
+            // --- 12. FALLBACK ---
+            else {
+                await speak("I'm not exactly sure about that, so I'll search it for you.");
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(command)}`, '_blank');
+            }
+
+            isListeningState = false; // End processing
         }
 
-        function triggerBlackScreen() {
-            blackScreen.style.opacity = '1';
-            blackScreen.style.pointerEvents = 'auto';
+        // --- SPEECH RECOGNITION (Always On) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
 
+        function initSpeechRecognition() {
+            if (!SpeechRecognition) {
+                responseText.textContent = "Voice recognition not supported. Use Chrome or Edge.";
+                responseText.classList.add('visible');
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true; 
+            
+            // SET TO AUSTRALIAN ENGLISH FOR BETTER ACCENT RECOGNITION
+            recognition.lang = 'en-AU';
+
+            recognition.onresult = (event) => {
+                if (isSpeaking) return;
+
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+                    else interimTranscript += event.results[i][0].transcript;
+                }
+
+                const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
+                const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car)/i;
+
+                // WAKE WORD HEARD
+                if (wakeWordRegex.test(currentText) && !isListeningState) {
+                    isListeningState = true;
+                    
+                    activationSound.currentTime = 0;
+                    activationSound.play().catch(e=>console.log(e));
+
+                    clearTimeout(idleTimeout);
+                    idleTimeout = setTimeout(() => {
+                        isListeningState = false;
+                    }, 8000); 
+                }
+
+                // PROCESS FINISHED SENTENCE
+                if (finalTranscript) {
+                    let commandText = finalTranscript.toLowerCase();
+                    if (wakeWordRegex.test(commandText)) {
+                        commandText = commandText.replace(wakeWordRegex, '').trim();
+                    }
+
+                    if (isListeningState && commandText.length > 0) {
+                        isListeningState = false;
+                        clearTimeout(idleTimeout);
+                        processCommand(commandText);
+                    }
+                }
+            };
+
+            // Safer loop to prevent violent spamming if permissions drop
+            recognition.onend = () => {
+                if (!isSpeaking && micPermissionGranted) {
+                    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
+                } else if (micPermissionGranted) {
+                    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 1500);
+                }
+            };
+
+            recognition.start();
+        }
+
+        // --- INITIALIZATION ---
+        overlay.addEventListener('click', async () => {
+            
+            // 1. Request microphone gracefully
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                micPermissionGranted = true;
+                // We don't need to keep the stream variable stored, just getting permission is enough
+            } catch (err) {
+                console.log("Mic access denied or unavailable.");
+                alert("Please allow microphone access to use Guahh!");
+                return; // Stop initialization if mic is blocked
+            }
+
+            // 2. Unlock Audio Engine
+            activationSound.volume = 0;
+            activationSound.play().then(() => {
+                activationSound.pause();
+                activationSound.currentTime = 0;
+                activationSound.volume = 1;
+            }).catch(e => console.log(e));
+
+            window.speechSynthesis.getVoices();
+
+            // 3. UI Transition & Start SiriWave
+            overlay.style.opacity = '0';
             setTimeout(() => {
-                resetCallUI();
-                blackScreen.style.opacity = '0';
-                blackScreen.style.pointerEvents = 'none';
-            }, 7000);
-        }
+                overlay.style.display = 'none';
+                siriContainer.style.display = 'block';
+                
+                siriWave = new SiriWave({
+                    container: siriContainer,
+                    width: window.innerWidth,
+                    height: 300,
+                    style: 'ios9',
+                    speed: 0.03,
+                    amplitude: 0.1,
+                    autostart: true
+                });
 
-        function resetCallUI() {
-            activeView.style.display = 'none';
-            incomingView.style.display = 'flex';
-            controlItems.forEach(item => item.classList.remove('active'));
-        }
+                window.addEventListener('resize', () => {
+                    siriContainer.innerHTML = ''; 
+                    siriWave = new SiriWave({
+                        container: siriContainer,
+                        width: window.innerWidth,
+                        height: 300,
+                        style: 'ios9',
+                        speed: currentSpeed,
+                        amplitude: currentAmplitude,
+                        autostart: true
+                    });
+                });
+
+                animateWave();
+                
+                // Init instantly without saying "Guahh is online"
+                initSpeechRecognition();
+            }, 500);
+        });
+
     </script>
 </body>
 </html>
