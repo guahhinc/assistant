@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guahh Assistant</title>
+    
+    <!-- Include Inter Tight Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
     <!-- Include the SiriWave Library -->
     <script src="https://unpkg.com/siriwave/dist/siriwave.umd.min.js"></script>
+    
     <style>
         body {
             margin: 0;
@@ -17,56 +24,20 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter Tight', sans-serif;
             color: white;
         }
 
-        #start-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            cursor: pointer;
-            transition: opacity 0.5s ease;
-        }
-
-        #start-overlay h1 {
-            font-weight: 300;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            color: #1ba8fc;
-        }
-
-        #start-overlay p {
-            color: #bbb;
-            font-size: 1rem;
-            max-width: 500px;
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        .highlight {
-            color: #f673e1;
-            font-weight: bold;
-        }
-
-        /* Container for the SiriWave library */
         #siri-container {
             width: 100vw;
             height: 300px;
-            display: none; /* Hidden until started */
         }
 
-        /* Subtitle Text */
         #response-text {
             position: absolute;
             bottom: 20vh;
-            font-size: 1.4rem;
-            font-weight: 300;
+            font-size: 1.5rem;
+            font-weight: 400;
             text-align: center;
             max-width: 700px;
             line-height: 1.5;
@@ -76,6 +47,7 @@
             color: #ffffff;
             text-shadow: 0 2px 10px rgba(0,0,0,0.6);
             padding: 0 20px;
+            letter-spacing: -0.02em;
         }
 
         #response-text.visible {
@@ -85,23 +57,14 @@
     </style>
 </head>
 <body>
-
-    <div id="start-overlay">
-        <h1>Click to wake Guahh</h1>
-        <p>To remember mic permission forever, make sure you open this file using a <span class="highlight">Local Web Server</span> (like VS Code Live Server) instead of just double-clicking the HTML file!</p>
-    </div>
     
     <!-- SiriWave Library Target Container -->
     <div id="siri-container"></div>
-    
     <div id="response-text"></div>
 
     <script>
-        const overlay = document.getElementById('start-overlay');
         const siriContainer = document.getElementById('siri-container');
         const responseText = document.getElementById('response-text');
-
-        // Activation sound
         const activationSound = new Audio('https://raw.githubusercontent.com/guahhinc/guahhai/main/jbl_begin_sae.mp3');
 
         // State Variables
@@ -112,13 +75,13 @@
 
         // SiriWave Variables
         let siriWave;
-        let currentAmplitude = 0.1;
-        let currentSpeed = 0.03;
+        let currentAmplitude = 0.3; // Increased idle amplitude
+        let currentSpeed = 0.05;    // Increased idle speed
 
-        // Smoothly animate the SiriWave between Idle and Active states
+        // Smoothly animate the SiriWave
         function animateWave() {
-            let targetAmplitude = (isListeningState || isSpeaking) ? 1.5 : 0.1;
-            let targetSpeed = (isListeningState || isSpeaking) ? 0.15 : 0.03;
+            let targetAmplitude = (isListeningState || isSpeaking) ? 1.5 : 0.3;
+            let targetSpeed = (isListeningState || isSpeaking) ? 0.15 : 0.06;
 
             currentAmplitude += (targetAmplitude - currentAmplitude) * 0.1;
             currentSpeed += (targetSpeed - currentSpeed) * 0.1;
@@ -127,7 +90,6 @@
                 siriWave.setAmplitude(currentAmplitude);
                 siriWave.setSpeed(currentSpeed);
             }
-
             requestAnimationFrame(animateWave);
         }
 
@@ -137,13 +99,10 @@
 
         function getBestVoice() {
             if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-            
-            // 1. Try to find an Australian Voice first
             let auVoice = availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Female')) || 
                           availableVoices.find(v => v.lang === 'en-AU');
             if (auVoice) return auVoice;
 
-            // 2. Fallbacks
             const preferredNames = ['Aria', 'Jenny', 'Google UK English Female', 'Google US English', 'Samantha'];
             for (let name of preferredNames) {
                 const found = availableVoices.find(v => v.name.includes(name));
@@ -155,7 +114,6 @@
         function speak(text) {
             return new Promise((resolve) => {
                 isSpeaking = true;
-                
                 responseText.textContent = text;
                 responseText.classList.add('visible');
 
@@ -166,9 +124,7 @@
 
                 utterance.onend = () => {
                     isSpeaking = false;
-                    setTimeout(() => {
-                        if (!isSpeaking) responseText.classList.remove('visible');
-                    }, 3000);
+                    setTimeout(() => { if (!isSpeaking) responseText.classList.remove('visible'); }, 3000);
                     resolve();
                 };
 
@@ -177,7 +133,6 @@
             });
         }
 
-        // --- EXTENDED APP DICTIONARY ---
         const appProtocols = {
             'steam': 'steam://open/main',
             'discord': 'discord://',
@@ -203,113 +158,97 @@
             'weather app': 'bingweather:'
         };
 
+        const backupJokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs.",
+            "I told my computer I needed a break, and now it won't stop sending me Kit-Kat ads.",
+            "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
+            "Why did the web developer walk out of the restaurant? Because of the terrible table layout.",
+            "What is a computer's favorite beat? An algo-rhythm!"
+        ];
+
         // --- SMARTER BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
+            // CANCEL COMMANDS (Do nothing and end listening state)
+            const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
+            if (cancelWords.includes(command)) {
+                return; 
+            }
+
             isListeningState = true; 
 
-            // --- 1. GENERAL CONVERSATION ---
-            if (command === 'yo' || command === 'hello' || command === 'hi' || command === 'hey' || command === 'gday' || command === "g'day") {
+            // 1. CONVERSATION
+            if (/^(yo|hello|hi|hey|gday|g'day)$/i.test(command)) {
                 const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
                 await speak(greetings[Math.floor(Math.random() * greetings.length)]);
             }
-            else if (command.includes('how are you') || command.includes("how's it going") || command.includes('how do you do')) {
+            else if (command.includes('how are you') || command.includes("how's it going")) {
                 await speak("I'm doing wonderfully, thanks for asking! I'm ready to assist you.");
             }
-            else if (command.includes('what can you do') || command.includes('what are your features') || command.includes('help me')) {
-                await speak("I can open apps on your PC, search the web, calculate math, tell you the time, check the weather, draft emails, play YouTube videos, and tell jokes.");
-            }
-            else if (command.includes('who are you') || command.includes('what is your name')) {
-                await speak("I am Guahh Assistant, your intelligent companion.");
+            else if (command.includes('what can you do') || command.includes('help me')) {
+                await speak("I can open apps on your PC, calculate math, tell you the time, check the weather, play YouTube videos, and launch Roblox games.");
             }
             else if (command.includes('thank you') || command === 'thanks' || command === 'cheers') {
                 await speak("You're very welcome! Let me know if you need anything else.");
             }
 
-            // --- 2. JOKES & FACTS ---
+            // 2. JOKES & FACTS
             else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
                 try {
                     const res = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
                     const data = await res.json();
-                    await speak(data.joke);
+                    await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
                 } catch (e) {
-                    await speak("Why did the computer go to the doctor? Because it had a virus!");
-                }
-            }
-            else if (command.includes('tell me a fact') || command.includes('interesting fact')) {
-                try {
-                    const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
-                    const data = await res.json();
-                    await speak(data.text);
-                } catch (e) {
-                    await speak("Bananas are curved because they grow towards the sun.");
+                    await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
                 }
             }
 
-            // --- 3. YOUTUBE VIDEO PLAYBACK ---
-            else if (command.includes('play') && command.includes('youtube')) {
-                const query = command.replace('play', '').replace('on youtube', '').replace('in youtube', '').trim();
+            // 3. YOUTUBE RANDOMIZER & AUTOPLAY (Uses DuckDuckGo "I'm Feeling Lucky" Trick)
+            else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
+                await speak("Picking a fun random video for you!");
+                const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
+                const rq = randomTopics[Math.floor(Math.random() * randomTopics.length)];
+                window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(rq)}`, '_blank');
+            }
+            else if (command.startsWith('play') && command.includes('on youtube')) {
+                const query = command.replace('play', '').replace('on youtube', '').trim();
                 await speak(`Playing ${query} on YouTube.`);
-                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+                // !yt automatically redirects to the first YouTube search result
+                window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 4. ROBLOX ---
+            // 4. ROBLOX (Fixed Proxy Logic)
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
                     const gameName = match[1].trim();
                     await speak(`Searching Roblox for ${gameName}...`);
                     try {
-                        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`)}`;
-                        const res = await fetch(proxyUrl);
-                        const data = JSON.parse((await res.json()).contents);
+                        // Fixed proxy using raw data to bypass the string wrapper issue
+                        const url = `https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`;
+                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+                        const data = await res.json();
                         if (data && data.data && data.data.length > 0) {
                             await speak(`Launching ${data.data[0].name} in Roblox!`);
                             window.location.href = `roblox://experiences/start?placeId=${data.data[0].placeId}`;
                         } else throw new Error("Not found");
                     } catch (e) {
-                        await speak(`Opening the search page for ${gameName} on Roblox.`);
+                        await speak(`I couldn't auto-launch ${gameName}. Opening the Roblox search page instead.`);
                         window.open(`https://www.roblox.com/discover/?Keyword=${encodeURIComponent(gameName)}`, '_blank');
                     }
                 }
             }
-            
-            // --- 5. DICTIONARY DEFINITIONS ---
-            else if (command.startsWith('define') || command.includes('definition of')) {
-                const word = command.replace(/(define|what is the definition of)/g, '').trim();
-                try {
-                    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-                    const data = await res.json();
-                    if (data && data[0] && data[0].meanings[0].definitions[0]) {
-                        await speak(`The definition of ${word} is: ${data[0].meanings[0].definitions[0].definition}`);
-                    } else throw new Error("Not found");
-                } catch (e) {
-                    await speak(`I couldn't find a dictionary definition for ${word}.`);
-                }
-            }
 
-            // --- 6. IMAGES & SEARCH ---
-            else if (command.includes('images of') || command.includes('show pictures of')) {
-                const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
-                await speak(`Pulling up images of ${query}.`);
-                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
-            }
-            else if (command.startsWith('search') || command.includes('search for')) {
-                const query = command.replace(/(search for|search)/g, '').trim();
-                await speak(`Here is what I found for ${query}.`);
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-            }
-
-            // --- 7. TIME & DATE ---
-            else if (command.includes('time') && !command.includes('what is')) {
+            // 5. STRICT TIME & DATE PARSING (Ignores Math "times")
+            else if (/(what time is it|current time|^time$|tell me the time)/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 await speak(`The time is currently ${time}.`);
             } 
-            else if (command.includes('date') || command.includes('day is it')) {
+            else if (/(what date is it|what is the date|what day is it|^date$)/i.test(command)) {
                 const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
                 await speak(`Today is ${date}.`);
             }
             
-            // --- 8. WEATHER ---
+            // 6. WEATHER
             else if (command.includes('weather')) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
@@ -326,39 +265,38 @@
                 }
             } 
 
-            // --- 9. MATH & WIKIPEDIA ---
-            else if (command.includes('what is') || command.includes('who is') || command.includes('calculate')) {
-                let isMath = false;
+            // 7. MATH & WIKIPEDIA
+            else if (command.startsWith('what is') || command.startsWith('calculate') || command.startsWith('who is')) {
                 let mathExpr = command.replace(/(what is|calculate)/g, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
                 
-                if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && mathExpr.length > 0) {
+                // Strict Math Regex (Only numbers and operators)
+                if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
                     try {
                         const result = new Function('return ' + mathExpr)();
                         await speak(`The answer is ${result}.`);
-                        isMath = true;
+                        isListeningState = false;
+                        return;
                     } catch(e) {}
                 }
 
-                if (!isMath) {
-                    const query = command.replace('who is ', '').replace('what is ', '').trim();
-                    try {
-                        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-                        const data = await res.json();
-                        if (data.extract) {
-                            const sentences = data.extract.split('. ');
-                            const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
-                            await speak(shortSummary);
-                        } else {
-                            await speak(`I'm pulling up a web search for ${query}.`);
-                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                        }
-                    } catch (e) {
-                        await speak(`I'm having trouble connecting to my knowledge base.`);
+                // If not math, search Wikipedia
+                const query = command.replace(/what is |who is /g, '').trim();
+                try {
+                    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    if (data.extract) {
+                        const sentences = data.extract.split('. ');
+                        const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
+                        await speak(shortSummary);
+                    } else {
+                        await speak(`I'm not exactly sure about that.`);
                     }
+                } catch (e) {
+                    await speak(`I'm not exactly sure about that.`);
                 }
             }
             
-            // --- 10. OPEN APPS ---
+            // 8. OPEN APPS
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -380,22 +318,16 @@
                 }
             }
 
-            // --- 11. EMAIL ---
-            else if (command.includes('email') || command.includes('draft')) {
-                window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
-                await speak("Opening Outlook to draft a new message.");
-            }
-
-            // --- 12. FALLBACK ---
+            // 9. FALLBACK (If it didn't match any above commands, do nothing so it doesn't spam)
             else {
-                await speak("I'm not exactly sure about that, so I'll search it for you.");
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(command)}`, '_blank');
+                // We don't speak here so it ignores random background noise beautifully
+                console.log("Unrecognized command ignored: ", command);
             }
 
-            isListeningState = false; // End processing
+            isListeningState = false; 
         }
 
-        // --- SPEECH RECOGNITION (Always On) ---
+        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
@@ -409,9 +341,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            
-            // SET TO AUSTRALIAN ENGLISH FOR BETTER ACCENT RECOGNITION
-            recognition.lang = 'en-AU';
+            recognition.lang = 'en-AU'; // Australian English
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -430,9 +360,8 @@
                 // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
                     isListeningState = true;
-                    
                     activationSound.currentTime = 0;
-                    activationSound.play().catch(e=>console.log(e));
+                    activationSound.play().catch(e => console.log("Audio requires interaction first time."));
 
                     clearTimeout(idleTimeout);
                     idleTimeout = setTimeout(() => {
@@ -443,19 +372,26 @@
                 // PROCESS FINISHED SENTENCE
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
+                    
                     if (wakeWordRegex.test(commandText)) {
                         commandText = commandText.replace(wakeWordRegex, '').trim();
                     }
 
-                    if (isListeningState && commandText.length > 0) {
-                        isListeningState = false;
-                        clearTimeout(idleTimeout);
-                        processCommand(commandText);
+                    if (isListeningState) {
+                        // Filters out random 1-2 letter background noise entirely
+                        if (commandText.length > 2 && !['uh', 'um', 'ah'].includes(commandText)) {
+                            isListeningState = false;
+                            clearTimeout(idleTimeout);
+                            
+                            // 0.4s Delay so it doesn't accidentally cut you off mid-breath
+                            setTimeout(() => {
+                                processCommand(commandText);
+                            }, 400);
+                        }
                     }
                 }
             };
 
-            // Safer loop to prevent violent spamming if permissions drop
             recognition.onend = () => {
                 if (!isSpeaking && micPermissionGranted) {
                     setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
@@ -464,67 +400,47 @@
                 }
             };
 
-            recognition.start();
+            setTimeout(() => {
+                try { recognition.start(); } catch(e) {}
+            }, 500);
         }
 
-        // --- INITIALIZATION ---
-        overlay.addEventListener('click', async () => {
-            
-            // 1. Request microphone gracefully
+        // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
+        window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micPermissionGranted = true;
-                // We don't need to keep the stream variable stored, just getting permission is enough
             } catch (err) {
-                console.log("Mic access denied or unavailable.");
-                alert("Please allow microphone access to use Guahh!");
-                return; // Stop initialization if mic is blocked
+                responseText.textContent = "Please allow microphone access to use Guahh!";
+                responseText.classList.add('visible');
+                return; 
             }
 
-            // 2. Unlock Audio Engine
-            activationSound.volume = 0;
-            activationSound.play().then(() => {
-                activationSound.pause();
-                activationSound.currentTime = 0;
-                activationSound.volume = 1;
-            }).catch(e => console.log(e));
+            siriWave = new SiriWave({
+                container: siriContainer,
+                width: window.innerWidth,
+                height: 300,
+                style: 'ios9',
+                speed: currentSpeed,
+                amplitude: currentAmplitude,
+                autostart: true
+            });
 
-            window.speechSynthesis.getVoices();
-
-            // 3. UI Transition & Start SiriWave
-            overlay.style.opacity = '0';
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                siriContainer.style.display = 'block';
-                
+            window.addEventListener('resize', () => {
+                siriContainer.innerHTML = ''; 
                 siriWave = new SiriWave({
                     container: siriContainer,
                     width: window.innerWidth,
                     height: 300,
                     style: 'ios9',
-                    speed: 0.03,
-                    amplitude: 0.1,
+                    speed: currentSpeed,
+                    amplitude: currentAmplitude,
                     autostart: true
                 });
+            });
 
-                window.addEventListener('resize', () => {
-                    siriContainer.innerHTML = ''; 
-                    siriWave = new SiriWave({
-                        container: siriContainer,
-                        width: window.innerWidth,
-                        height: 300,
-                        style: 'ios9',
-                        speed: currentSpeed,
-                        amplitude: currentAmplitude,
-                        autostart: true
-                    });
-                });
-
-                animateWave();
-                
-                // Init instantly without saying "Guahh is online"
-                initSpeechRecognition();
-            }, 500);
+            animateWave();
+            initSpeechRecognition();
         });
 
     </script>
