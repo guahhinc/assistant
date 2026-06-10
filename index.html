@@ -72,7 +72,7 @@
         let isListeningState = false; 
         let idleTimeout = null;
         let micPermissionGranted = false;
-        let persistentMicStream = null; // Keeps the mic locked on permanently
+        let persistentMicStream = null;
 
         // SiriWave Variables
         let siriWave;
@@ -129,13 +129,27 @@
                 utterance.pitch = 1.0;
                 utterance.rate = 1.05;
 
+                // Failsafe timeout to prevent Chrome TTS engine locks
+                const speakTimeout = setTimeout(() => {
+                    console.log("Failsafe triggered: Speech Synthesis forced release.");
+                    window.speechSynthesis.cancel();
+                    isSpeaking = false;
+                    resolve();
+                }, 10000); // Max 10 seconds of speech before auto-release
+
                 utterance.onend = () => {
+                    clearTimeout(speakTimeout);
                     isSpeaking = false;
                     setTimeout(() => { if (!isSpeaking) responseText.classList.remove('visible'); }, 3000);
                     resolve();
                 };
 
-                utterance.onerror = () => { isSpeaking = false; resolve(); };
+                utterance.onerror = () => { 
+                    clearTimeout(speakTimeout);
+                    isSpeaking = false; 
+                    resolve(); 
+                };
+                
                 window.speechSynthesis.speak(utterance);
             });
         }
@@ -222,7 +236,6 @@
             "Why did the Wi-Fi go to therapy? It had too many connection issues."
         ];
 
-        // Smart Conversational Responses
         const casualResponses = {
             'how old are you': "I was born in 2026, which makes me quite young, but I have the knowledge of the entire internet!",
             'where do you live': "I live right here inside your computer's memory, in the digital world.",
@@ -238,7 +251,6 @@
         // --- BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
             
-            // 0. CANCEL COMMANDS
             const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
             if (cancelWords.includes(command)) {
                 isListeningState = false;
@@ -247,7 +259,7 @@
 
             isListeningState = true; 
 
-            // --- 1. MATH EVALUATION (Checked First!) ---
+            // --- 1. MATH EVALUATION ---
             let mathExpr = convertSpokenNumbers(command)
                 .replace(/(what is|whats|what's|calculate)/gi, '')
                 .replace(/plus/gi, '+')
@@ -327,20 +339,28 @@
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 9. ROBLOX ---
+            // --- 9. ROBLOX (Scraper Logic via Proxy) ---
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
                     const gameName = match[1].trim();
                     await speak(`Searching Roblox for ${gameName}...`);
                     try {
-                        const url = `https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`;
-                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-                        const data = await res.json();
-                        if (data && data.data && data.data.length > 0) {
-                            await speak(`Launching ${data.data[0].name} in Roblox!`);
-                            window.location.href = `roblox://experiences/start?placeId=${data.data[0].placeId}`;
-                        } else throw new Error("Not found");
+                        // Directly crawl search results through proxy (completely bypasses deprecated legacy APIs)
+                        const searchUrl = `https://html.duckduckgo.com/html/?q=site:roblox.com/games/+${encodeURIComponent(gameName)}`;
+                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
+                        const htmlText = await res.text();
+                        
+                        // Parse Place ID from HTML (decoded and url-encoded format variations)
+                        const placeIdMatch = htmlText.match(/roblox\.com(?:%2F|\/)games(?:%2F|\/)(\d+)/i) || htmlText.match(/roblox\.com\/games\/(\d+)/i);
+                        
+                        if (placeIdMatch && placeIdMatch[1]) {
+                            const placeId = placeIdMatch[1];
+                            await speak(`Launching ${gameName} in Roblox!`);
+                            window.location.href = `roblox://experiences/start?placeId=${placeId}`;
+                        } else {
+                            throw new Error("No place ID found in search results");
+                        }
                     } catch (e) {
                         await speak(`I couldn't auto-launch ${gameName}. Opening the Roblox search page instead.`);
                         window.open(`https://www.roblox.com/discover/?Keyword=${encodeURIComponent(gameName)}`, '_blank');
@@ -439,10 +459,36 @@
                 }
             }
 
-            // --- 15. EMAIL ---
+            // --- 15. EMAIL DRAFTING WITH FULL CONTENT ---
             else if (command.includes('email') || command.includes('draft')) {
-                window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
-                await speak("Opening Outlook to draft a new message.");
+                let recipient = "";
+                let subject = "New Draft";
+                let body = "Hello there,\n\n";
+
+                // Complex parsing: "email to [recipient] about [subject] saying [body]"
+                const emailRegex = /(?:draft an email|email|draft a mail) to\s+([a-zA-Z0-9@\.\s]+?)\s+(?:about|subject)\s+(.+?)\s+(?:saying|body|with)\s+(.+)/i;
+                const match = command.match(emailRegex);
+
+                if (match) {
+                    recipient = match[1].trim();
+                    subject = match[2].trim();
+                    body = match[3].trim();
+                } else {
+                    // Fallback parsing
+                    const toMatch = command.match(/to\s+([a-zA-Z0-9@\.\s]+)/i);
+                    const aboutMatch = command.match(/about\s+(.+)/i);
+                    if (toMatch) recipient = toMatch[1].split(' ')[0].trim();
+                    if (aboutMatch) subject = aboutMatch[1].trim();
+                }
+
+                // Append recipient name inside the draft natively if they didn't supply an email format
+                const toField = recipient.includes('@') ? recipient : "";
+                const finalBody = recipient && !recipient.includes('@') 
+                    ? `Hi ${recipient},\n\n${body}` 
+                    : body;
+
+                window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
+                await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
             }
 
             // --- 16. FALLBACK FEEDBACK ---
@@ -471,7 +517,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            recognition.lang = 'en-AU'; // Australian English
+            recognition.lang = 'en-AU'; 
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -486,8 +532,8 @@
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
-                // Extensive Australian phonetic wake word variants mapping
-                const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car|guard|growth|glass|goy|gday|g'day|god|guitar|galah|gwara|g'war)/i;
+                // Advanced optional-prefix, highly phonetic wake word mapper
+                const wakeWordRegex = /(?:hey\s+)?(guahh|gua|gwa|gwah|guwa|goo\s+a|goya|guar|goa|car|guard|growth|glass|goy|gday|g'day|god|guitar|galah|gwara|g'war|heygua|egwa|egg\s+bar|headway|hager|heger|hey\s+what|hey\s+one)/i;
 
                 // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
