@@ -4,15 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guahh Assistant</title>
-    
-    <!-- Include Inter Tight Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
     <!-- Include the SiriWave Library -->
     <script src="https://unpkg.com/siriwave/dist/siriwave.umd.min.js"></script>
-    
     <style>
         body {
             margin: 0;
@@ -24,20 +17,56 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Inter Tight', sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: white;
         }
 
+        #start-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        #start-overlay h1 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: #1ba8fc;
+        }
+
+        #start-overlay p {
+            color: #bbb;
+            font-size: 1rem;
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            color: #f673e1;
+            font-weight: bold;
+        }
+
+        /* Container for the SiriWave library */
         #siri-container {
             width: 100vw;
             height: 300px;
+            display: none; /* Hidden until started */
         }
 
+        /* Subtitle Text */
         #response-text {
             position: absolute;
             bottom: 20vh;
-            font-size: 1.5rem;
-            font-weight: 400;
+            font-size: 1.4rem;
+            font-weight: 300;
             text-align: center;
             max-width: 700px;
             line-height: 1.5;
@@ -47,7 +76,6 @@
             color: #ffffff;
             text-shadow: 0 2px 10px rgba(0,0,0,0.6);
             padding: 0 20px;
-            letter-spacing: -0.02em;
         }
 
         #response-text.visible {
@@ -57,14 +85,23 @@
     </style>
 </head>
 <body>
+
+    <div id="start-overlay">
+        <h1>Click to wake Guahh</h1>
+        <p>To remember mic permission forever, make sure you open this file using a <span class="highlight">Local Web Server</span> (like VS Code Live Server) instead of just double-clicking the HTML file!</p>
+    </div>
     
     <!-- SiriWave Library Target Container -->
     <div id="siri-container"></div>
+    
     <div id="response-text"></div>
 
     <script>
+        const overlay = document.getElementById('start-overlay');
         const siriContainer = document.getElementById('siri-container');
         const responseText = document.getElementById('response-text');
+
+        // Activation sound
         const activationSound = new Audio('https://raw.githubusercontent.com/guahhinc/guahhai/main/jbl_begin_sae.mp3');
 
         // State Variables
@@ -72,17 +109,16 @@
         let isListeningState = false; 
         let idleTimeout = null;
         let micPermissionGranted = false;
-        let persistentMicStream = null;
 
         // SiriWave Variables
         let siriWave;
-        let currentAmplitude = 0.3; 
-        let currentSpeed = 0.05;    
+        let currentAmplitude = 0.1;
+        let currentSpeed = 0.03;
 
-        // Smoothly animate the SiriWave
+        // Smoothly animate the SiriWave between Idle and Active states
         function animateWave() {
-            let targetAmplitude = (isListeningState || isSpeaking) ? 1.5 : 0.3;
-            let targetSpeed = (isListeningState || isSpeaking) ? 0.15 : 0.06;
+            let targetAmplitude = (isListeningState || isSpeaking) ? 1.5 : 0.1;
+            let targetSpeed = (isListeningState || isSpeaking) ? 0.15 : 0.03;
 
             currentAmplitude += (targetAmplitude - currentAmplitude) * 0.1;
             currentSpeed += (targetSpeed - currentSpeed) * 0.1;
@@ -91,6 +127,7 @@
                 siriWave.setAmplitude(currentAmplitude);
                 siriWave.setSpeed(currentSpeed);
             }
+
             requestAnimationFrame(animateWave);
         }
 
@@ -101,26 +138,24 @@
         function getBestVoice() {
             if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
             
-            // 1. Prioritise premium Australian English first
+            // 1. Try to find an Australian Voice first
             let auVoice = availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Female')) || 
                           availableVoices.find(v => v.lang === 'en-AU');
             if (auVoice) return auVoice;
 
-            // 2. Prioritise US English (Avoiding British UK voices)
-            let usVoice = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Female')) || 
-                          availableVoices.find(v => v.lang === 'en-US');
-            if (usVoice) return usVoice;
-
-            // 3. Any English accent except British
-            let nonBritishVoice = availableVoices.find(v => v.lang.startsWith('en') && !v.lang.includes('GB'));
-            if (nonBritishVoice) return nonBritishVoice;
-
-            return availableVoices[0];
+            // 2. Fallbacks
+            const preferredNames = ['Aria', 'Jenny', 'Google UK English Female', 'Google US English', 'Samantha'];
+            for (let name of preferredNames) {
+                const found = availableVoices.find(v => v.name.includes(name));
+                if (found) return found;
+            }
+            return availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) || availableVoices[0];
         }
 
         function speak(text) {
             return new Promise((resolve) => {
                 isSpeaking = true;
+                
                 responseText.textContent = text;
                 responseText.classList.add('visible');
 
@@ -129,69 +164,20 @@
                 utterance.pitch = 1.0;
                 utterance.rate = 1.05;
 
-                // Failsafe timeout to prevent Chrome TTS engine locks
-                const speakTimeout = setTimeout(() => {
-                    console.log("Failsafe triggered: Speech Synthesis forced release.");
-                    window.speechSynthesis.cancel();
-                    isSpeaking = false;
-                    resolve();
-                }, 10000); // Max 10 seconds of speech before auto-release
-
                 utterance.onend = () => {
-                    clearTimeout(speakTimeout);
                     isSpeaking = false;
-                    setTimeout(() => { if (!isSpeaking) responseText.classList.remove('visible'); }, 3000);
+                    setTimeout(() => {
+                        if (!isSpeaking) responseText.classList.remove('visible');
+                    }, 3000);
                     resolve();
                 };
 
-                utterance.onerror = () => { 
-                    clearTimeout(speakTimeout);
-                    isSpeaking = false; 
-                    resolve(); 
-                };
-                
+                utterance.onerror = () => { isSpeaking = false; resolve(); };
                 window.speechSynthesis.speak(utterance);
             });
         }
 
-        // --- SPOKEN WORDS TO MATH DIGITS CONVERTER ---
-        function convertSpokenNumbers(text) {
-            const units = {
-                'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
-                'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
-                'seventeen': 17, 'eighteen': 18, 'nineteen': 19
-            };
-            const tens = {
-                'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90
-            };
-
-            let result = text;
-            
-            for (let t in tens) {
-                for (let u in units) {
-                    if (u !== 'zero') {
-                        const regex1 = new RegExp(`\\b${t}\\s+${u}\\b`, 'gi');
-                        const regex2 = new RegExp(`\\b${t}-${u}\\b`, 'gi');
-                        const mathSum = parseInt(tens[t]) + parseInt(units[u]);
-                        result = result.replace(regex1, mathSum);
-                        result = result.replace(regex2, mathSum);
-                    }
-                }
-            }
-            
-            for (let t in tens) {
-                const regex = new RegExp(`\\b${t}\\b`, 'gi');
-                result = result.replace(regex, tens[t]);
-            }
-            
-            for (let u in units) {
-                const regex = new RegExp(`\\b${u}\\b`, 'gi');
-                result = result.replace(regex, units[u]);
-            }
-            
-            return result;
-        }
-
+        // --- EXTENDED APP DICTIONARY ---
         const appProtocols = {
             'steam': 'steam://open/main',
             'discord': 'discord://',
@@ -217,158 +203,77 @@
             'weather app': 'bingweather:'
         };
 
-        const backupJokes = [
-            "Why do programmers prefer dark mode? Because light attracts bugs.",
-            "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
-            "What is a computer's favorite beat? An algo-rhythm!",
-            "Why did the computer show up at work late? It had a hard drive.",
-            "What do you call a computer floating in the ocean? A Dell rolling in the deep.",
-            "Why was the mobile phone wearing glasses? It lost its contacts.",
-            "What did the spider do on the computer? Made a website.",
-            "Why did the PowerPoint presentation cross the road? To get to the other slide.",
-            "Why did the developer go broke? Because he used up all his cache.",
-            "How does a computer catch a cold? From a virus!",
-            "What do you get when you cross a computer with an elephant? Lots of memory!",
-            "Why are PCs like air conditioners? They stop working properly when you open Windows.",
-            "What is a baby computer called? A microchip.",
-            "Why did the computer squeak? Because someone stepped on its mouse!",
-            "What's an alien's favorite place on a computer? The space bar.",
-            "Why did the Wi-Fi go to therapy? It had too many connection issues."
-        ];
-
-        const casualResponses = {
-            'how old are you': "I was born in 2026, which makes me quite young, but I have the knowledge of the entire internet!",
-            'where do you live': "I live right here inside your computer's memory, in the digital world.",
-            'are you married': "No, I am completely single. I'm married to my work of helping you!",
-            'do you like humans': "I love humans! You guys have great accents, especially the Australian one.",
-            'what is your purpose': "My purpose is to be your ultimate desktop assistant, making your life easier.",
-            'who made you': "I was created by the team at Guahh Inc.",
-            'meaning of life': "According to a very famous book, the answer is forty-two. But I think it's about being helpful!",
-            'tell me a secret': "If you say 'Nevermind', I will instantly stop whatever I'm doing. But keep that between us!",
-            'are you a robot': "I am an artificial intelligence assistant, but I prefer to think of myself as a digital friend."
-        };
-
-        // --- BRAIN & COMMAND LOGIC ---
+        // --- SMARTER BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
-            
-            const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
-            if (cancelWords.includes(command)) {
-                isListeningState = false;
-                return; 
-            }
-
             isListeningState = true; 
 
-            // --- 1. MATH EVALUATION ---
-            let mathExpr = convertSpokenNumbers(command)
-                .replace(/(what is|whats|what's|calculate)/gi, '')
-                .replace(/plus/gi, '+')
-                .replace(/minus/gi, '-')
-                .replace(/(times|multiplied by)/gi, '*')
-                .replace(/divided by/gi, '/')
-                .replace(/x/gi, '*')
-                .trim();
-            
-            if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
-                try {
-                    const result = new Function('return ' + mathExpr)();
-                    await speak(`The answer is ${result}.`);
-                    isListeningState = false;
-                    return;
-                } catch(e) {}
-            }
-
-            // --- 2. TIME ---
-            if (command.includes('time')) {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                await speak(`The time is currently ${time}.`);
-            } 
-
-            // --- 3. DATE ---
-            else if (command.includes('date') || command.includes('day is it') || command.includes('today')) {
-                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-                await speak(`Today is ${date}.`);
-            }
-
-            // --- 4. GOOGLE CALENDAR REMINDERS ---
-            else if (command.includes('remind me to') || command.includes('set a reminder')) {
-                const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
-                if (match) {
-                    const taskText = match[1].trim();
-                    await speak(`Opening Google Calendar to set a reminder to ${taskText}.`);
-                    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(taskText)}`;
-                    window.open(calendarUrl, '_blank');
-                } else {
-                    await speak("What would you like me to remind you about?");
-                }
-            }
-
-            // --- 5. CASUAL TALK (Smart Chatbot) ---
-            else if (Object.keys(casualResponses).some(key => command.includes(key))) {
-                const matchedKey = Object.keys(casualResponses).find(key => command.includes(key));
-                await speak(casualResponses[matchedKey]);
-            }
-
-            // --- 6. CONVERSATION GREETINGS ---
-            else if (command.includes('hello') || command.includes('gday') || command.includes("g'day") || command.includes('hi') || command.includes('hey') || command === 'yo') {
+            // --- 1. GENERAL CONVERSATION ---
+            if (command === 'yo' || command === 'hello' || command === 'hi' || command === 'hey' || command === 'gday' || command === "g'day") {
                 const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
                 await speak(greetings[Math.floor(Math.random() * greetings.length)]);
             }
+            else if (command.includes('how are you') || command.includes("how's it going") || command.includes('how do you do')) {
+                await speak("I'm doing wonderfully, thanks for asking! I'm ready to assist you.");
+            }
+            else if (command.includes('what can you do') || command.includes('what are your features') || command.includes('help me')) {
+                await speak("I can open apps on your PC, search the web, calculate math, tell you the time, check the weather, draft emails, play YouTube videos, and tell jokes.");
+            }
+            else if (command.includes('who are you') || command.includes('what is your name')) {
+                await speak("I am Guahh Assistant, your intelligent companion.");
+            }
+            else if (command.includes('thank you') || command === 'thanks' || command === 'cheers') {
+                await speak("You're very welcome! Let me know if you need anything else.");
+            }
 
-            // --- 7. JOKES & FACTS ---
-            else if (command.includes('joke') || command.includes('make me laugh')) {
+            // --- 2. JOKES & FACTS ---
+            else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
                 try {
-                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
+                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
                     const data = await res.json();
-                    await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                    await speak(data.joke);
                 } catch (e) {
-                    await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                    await speak("Why did the computer go to the doctor? Because it had a virus!");
+                }
+            }
+            else if (command.includes('tell me a fact') || command.includes('interesting fact')) {
+                try {
+                    const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
+                    const data = await res.json();
+                    await speak(data.text);
+                } catch (e) {
+                    await speak("Bananas are curved because they grow towards the sun.");
                 }
             }
 
-            // --- 8. YOUTUBE RANDOMIZER & PLAYBACK ---
-            else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
-                await speak("Picking a fun random video for you!");
-                const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
-                const rq = randomTopics[Math.floor(Math.random() * randomTopics.length)];
-                window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(rq)}`, '_blank');
-            }
-            else if (command.startsWith('play') && command.includes('on youtube')) {
-                const query = command.replace('play', '').replace('on youtube', '').trim();
+            // --- 3. YOUTUBE VIDEO PLAYBACK ---
+            else if (command.includes('play') && command.includes('youtube')) {
+                const query = command.replace('play', '').replace('on youtube', '').replace('in youtube', '').trim();
                 await speak(`Playing ${query} on YouTube.`);
-                window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
+                window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 9. ROBLOX (Scraper Logic via Proxy) ---
+            // --- 4. ROBLOX ---
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
                     const gameName = match[1].trim();
                     await speak(`Searching Roblox for ${gameName}...`);
                     try {
-                        // Directly crawl search results through proxy (completely bypasses deprecated legacy APIs)
-                        const searchUrl = `https://html.duckduckgo.com/html/?q=site:roblox.com/games/+${encodeURIComponent(gameName)}`;
-                        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
-                        const htmlText = await res.text();
-                        
-                        // Parse Place ID from HTML (decoded and url-encoded format variations)
-                        const placeIdMatch = htmlText.match(/roblox\.com(?:%2F|\/)games(?:%2F|\/)(\d+)/i) || htmlText.match(/roblox\.com\/games\/(\d+)/i);
-                        
-                        if (placeIdMatch && placeIdMatch[1]) {
-                            const placeId = placeIdMatch[1];
-                            await speak(`Launching ${gameName} in Roblox!`);
-                            window.location.href = `roblox://experiences/start?placeId=${placeId}`;
-                        } else {
-                            throw new Error("No place ID found in search results");
-                        }
+                        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`)}`;
+                        const res = await fetch(proxyUrl);
+                        const data = JSON.parse((await res.json()).contents);
+                        if (data && data.data && data.data.length > 0) {
+                            await speak(`Launching ${data.data[0].name} in Roblox!`);
+                            window.location.href = `roblox://experiences/start?placeId=${data.data[0].placeId}`;
+                        } else throw new Error("Not found");
                     } catch (e) {
-                        await speak(`I couldn't auto-launch ${gameName}. Opening the Roblox search page instead.`);
+                        await speak(`Opening the search page for ${gameName} on Roblox.`);
                         window.open(`https://www.roblox.com/discover/?Keyword=${encodeURIComponent(gameName)}`, '_blank');
                     }
                 }
             }
             
-            // --- 10. DICTIONARY DEFINITIONS ---
+            // --- 5. DICTIONARY DEFINITIONS ---
             else if (command.startsWith('define') || command.includes('definition of')) {
                 const word = command.replace(/(define|what is the definition of)/g, '').trim();
                 try {
@@ -382,7 +287,7 @@
                 }
             }
 
-            // --- 11. IMAGES & SEARCH ---
+            // --- 6. IMAGES & SEARCH ---
             else if (command.includes('images of') || command.includes('show pictures of')) {
                 const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
                 await speak(`Pulling up images of ${query}.`);
@@ -393,8 +298,18 @@
                 await speak(`Here is what I found for ${query}.`);
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
             }
+
+            // --- 7. TIME & DATE ---
+            else if (command.includes('time') && !command.includes('what is')) {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                await speak(`The time is currently ${time}.`);
+            } 
+            else if (command.includes('date') || command.includes('day is it')) {
+                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                await speak(`Today is ${date}.`);
+            }
             
-            // --- 12. WEATHER ---
+            // --- 8. WEATHER ---
             else if (command.includes('weather')) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
@@ -411,33 +326,39 @@
                 }
             } 
 
-            // --- 13. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK ---
-            else if (/^(what is|whats|who is|whos|tell me about)\b/i.test(command)) {
-                const query = command.replace(/^(what is|whats|who is|whos|tell me about)\s+/gi, '').trim();
-                try {
-                    const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
-                    const searchData = await searchRes.json();
-                    
-                    if (searchData[1] && searchData[1].length > 0) {
-                        const exactTitle = searchData[1][0];
-                        const summaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`);
-                        const summaryData = await summaryRes.json();
-                        
-                        if (summaryData.extract) {
-                            const sentences = summaryData.extract.split('. ');
+            // --- 9. MATH & WIKIPEDIA ---
+            else if (command.includes('what is') || command.includes('who is') || command.includes('calculate')) {
+                let isMath = false;
+                let mathExpr = command.replace(/(what is|calculate)/g, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
+                
+                if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && mathExpr.length > 0) {
+                    try {
+                        const result = new Function('return ' + mathExpr)();
+                        await speak(`The answer is ${result}.`);
+                        isMath = true;
+                    } catch(e) {}
+                }
+
+                if (!isMath) {
+                    const query = command.replace('who is ', '').replace('what is ', '').trim();
+                    try {
+                        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                        const data = await res.json();
+                        if (data.extract) {
+                            const sentences = data.extract.split('. ');
                             const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
                             await speak(shortSummary);
-                            isListeningState = false;
-                            return;
+                        } else {
+                            await speak(`I'm pulling up a web search for ${query}.`);
+                            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
                         }
+                    } catch (e) {
+                        await speak(`I'm having trouble connecting to my knowledge base.`);
                     }
-                    await speak(`I don't have a direct answer for ${query} in my database.`);
-                } catch (e) {
-                    await speak("I had a bit of trouble connecting to my knowledge base.");
                 }
             }
             
-            // --- 14. OPEN APPS ---
+            // --- 10. OPEN APPS ---
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -459,48 +380,19 @@
                 }
             }
 
-            // --- 15. EMAIL DRAFTING WITH FULL CONTENT ---
+            // --- 11. EMAIL ---
             else if (command.includes('email') || command.includes('draft')) {
-                let recipient = "";
-                let subject = "New Draft";
-                let body = "Hello there,\n\n";
-
-                // Complex parsing: "email to [recipient] about [subject] saying [body]"
-                const emailRegex = /(?:draft an email|email|draft a mail) to\s+([a-zA-Z0-9@\.\s]+?)\s+(?:about|subject)\s+(.+?)\s+(?:saying|body|with)\s+(.+)/i;
-                const match = command.match(emailRegex);
-
-                if (match) {
-                    recipient = match[1].trim();
-                    subject = match[2].trim();
-                    body = match[3].trim();
-                } else {
-                    // Fallback parsing
-                    const toMatch = command.match(/to\s+([a-zA-Z0-9@\.\s]+)/i);
-                    const aboutMatch = command.match(/about\s+(.+)/i);
-                    if (toMatch) recipient = toMatch[1].split(' ')[0].trim();
-                    if (aboutMatch) subject = aboutMatch[1].trim();
-                }
-
-                // Append recipient name inside the draft natively if they didn't supply an email format
-                const toField = recipient.includes('@') ? recipient : "";
-                const finalBody = recipient && !recipient.includes('@') 
-                    ? `Hi ${recipient},\n\n${body}` 
-                    : body;
-
-                window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
-                await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
+                window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
+                await speak("Opening Outlook to draft a new message.");
             }
 
-            // --- 16. FALLBACK FEEDBACK ---
+            // --- 12. FALLBACK ---
             else {
-                const sorryResponses = [
-                    "Sorry, I didn't understand.",
-                    "Sorry, I didn't quite get that."
-                ];
-                await speak(sorryResponses[Math.floor(Math.random() * sorryResponses.length)]);
+                await speak("I'm not exactly sure about that, so I'll search it for you.");
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(command)}`, '_blank');
             }
 
-            isListeningState = false; 
+            isListeningState = false; // End processing
         }
 
         // --- SPEECH RECOGNITION (Always On) ---
@@ -517,7 +409,9 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            recognition.lang = 'en-AU'; 
+            
+            // SET TO AUSTRALIAN ENGLISH FOR BETTER ACCENT RECOGNITION
+            recognition.lang = 'en-AU';
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -531,15 +425,14 @@
                 }
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
-                
-                // Advanced optional-prefix, highly phonetic wake word mapper
-                const wakeWordRegex = /(?:hey\s+)?(guahh|gua|gwa|gwah|guwa|goo\s+a|goya|guar|goa|car|guard|growth|glass|goy|gday|g'day|god|guitar|galah|gwara|g'war|heygua|egwa|egg\s+bar|headway|hager|heger|hey\s+what|hey\s+one)/i;
+                const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car)/i;
 
                 // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
                     isListeningState = true;
+                    
                     activationSound.currentTime = 0;
-                    activationSound.play().catch(e => console.log("Audio requires interaction first time."));
+                    activationSound.play().catch(e=>console.log(e));
 
                     clearTimeout(idleTimeout);
                     idleTimeout = setTimeout(() => {
@@ -550,26 +443,19 @@
                 // PROCESS FINISHED SENTENCE
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
-                    
                     if (wakeWordRegex.test(commandText)) {
                         commandText = commandText.replace(wakeWordRegex, '').trim();
                     }
 
-                    if (isListeningState) {
-                        // Filter out short background noises
-                        if (commandText.length > 2 && !['uh', 'um', 'ah'].includes(commandText)) {
-                            isListeningState = false;
-                            clearTimeout(idleTimeout);
-                            
-                            // 0.4s Delay so it doesn't cut you off mid-breath
-                            setTimeout(() => {
-                                processCommand(commandText);
-                            }, 400);
-                        }
+                    if (isListeningState && commandText.length > 0) {
+                        isListeningState = false;
+                        clearTimeout(idleTimeout);
+                        processCommand(commandText);
                     }
                 }
             };
 
+            // Safer loop to prevent violent spamming if permissions drop
             recognition.onend = () => {
                 if (!isSpeaking && micPermissionGranted) {
                     setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
@@ -578,48 +464,67 @@
                 }
             };
 
-            setTimeout(() => {
-                try { recognition.start(); } catch(e) {}
-            }, 500);
+            recognition.start();
         }
 
-        // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
-        window.addEventListener('DOMContentLoaded', async () => {
+        // --- INITIALIZATION ---
+        overlay.addEventListener('click', async () => {
+            
+            // 1. Request microphone gracefully
             try {
-                // Keep the stream alive globally so the microphone never goes to sleep or prompts again
-                persistentMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micPermissionGranted = true;
+                // We don't need to keep the stream variable stored, just getting permission is enough
             } catch (err) {
-                responseText.textContent = "Please allow microphone access to use Guahh!";
-                responseText.classList.add('visible');
-                return; 
+                console.log("Mic access denied or unavailable.");
+                alert("Please allow microphone access to use Guahh!");
+                return; // Stop initialization if mic is blocked
             }
 
-            siriWave = new SiriWave({
-                container: siriContainer,
-                width: window.innerWidth,
-                height: 300,
-                style: 'ios9',
-                speed: currentSpeed,
-                amplitude: currentAmplitude,
-                autostart: true
-            });
+            // 2. Unlock Audio Engine
+            activationSound.volume = 0;
+            activationSound.play().then(() => {
+                activationSound.pause();
+                activationSound.currentTime = 0;
+                activationSound.volume = 1;
+            }).catch(e => console.log(e));
 
-            window.addEventListener('resize', () => {
-                siriContainer.innerHTML = ''; 
+            window.speechSynthesis.getVoices();
+
+            // 3. UI Transition & Start SiriWave
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                siriContainer.style.display = 'block';
+                
                 siriWave = new SiriWave({
                     container: siriContainer,
                     width: window.innerWidth,
                     height: 300,
                     style: 'ios9',
-                    speed: currentSpeed,
-                    amplitude: currentAmplitude,
+                    speed: 0.03,
+                    amplitude: 0.1,
                     autostart: true
                 });
-            });
 
-            animateWave();
-            initSpeechRecognition();
+                window.addEventListener('resize', () => {
+                    siriContainer.innerHTML = ''; 
+                    siriWave = new SiriWave({
+                        container: siriContainer,
+                        width: window.innerWidth,
+                        height: 300,
+                        style: 'ios9',
+                        speed: currentSpeed,
+                        amplitude: currentAmplitude,
+                        autostart: true
+                    });
+                });
+
+                animateWave();
+                
+                // Init instantly without saying "Guahh is online"
+                initSpeechRecognition();
+            }, 500);
         });
 
     </script>
