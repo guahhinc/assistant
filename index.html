@@ -133,6 +133,47 @@
             });
         }
 
+        // --- SPOKEN WORDS TO MATH DIGITS CONVERTER ---
+        function convertSpokenNumbers(text) {
+            const units = {
+                'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
+                'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
+                'seventeen': 17, 'eighteen': 18, 'nineteen': 19
+            };
+            const tens = {
+                'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90
+            };
+
+            let result = text;
+            
+            // Replace compound numbers (e.g. "twenty five" -> 25)
+            for (let t in tens) {
+                for (let u in units) {
+                    if (u !== 'zero') {
+                        const regex1 = new RegExp(`\\b${t}\\s+${u}\\b`, 'gi');
+                        const regex2 = new RegExp(`\\b${t}-${u}\\b`, 'gi');
+                        const mathSum = parseInt(tens[t]) + parseInt(units[u]);
+                        result = result.replace(regex1, mathSum);
+                        result = result.replace(regex2, mathSum);
+                    }
+                }
+            }
+            
+            // Replace single tens (e.g. "twenty" -> 20)
+            for (let t in tens) {
+                const regex = new RegExp(`\\b${t}\\b`, 'gi');
+                result = result.replace(regex, tens[t]);
+            }
+            
+            // Replace single units (e.g. "five" -> 5)
+            for (let u in units) {
+                const regex = new RegExp(`\\b${u}\\b`, 'gi');
+                result = result.replace(regex, units[u]);
+            }
+            
+            return result;
+        }
+
         const appProtocols = {
             'steam': 'steam://open/main',
             'discord': 'discord://',
@@ -206,7 +247,6 @@
             // 2. JOKES & FACTS
             else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
                 try {
-                    // STRICT BLACKLIST APPLIED for clean jokes only
                     const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
                     const data = await res.json();
                     await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
@@ -215,13 +255,12 @@
                 }
             }
 
-            // 3. SET REMINDERS (Google Calendar Integration)
+            // 3. SET REMINDERS (Google Calendar)
             else if (command.includes('remind me to') || command.includes('set a reminder')) {
                 const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
                 if (match) {
                     const taskText = match[1].trim();
                     await speak(`Opening Google Calendar to set a reminder to ${taskText}.`);
-                    // Google Calendar Event Template link
                     const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(taskText)}`;
                     window.open(calendarUrl, '_blank');
                 } else {
@@ -263,7 +302,7 @@
                 }
             }
 
-            // 6. STRICT TIME & DATE PARSING
+            // 6. STRICT TIME & DATE PARSING (Using Regex)
             else if (/^(what time is it|current time|time|tell me the time|what's the time)$/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 await speak(`The time is currently ${time}.`);
@@ -292,9 +331,17 @@
 
             // 8. MATH & WIKIPEDIA
             else if (/^(what is|whats|who is|whos|calculate)\b/i.test(command)) {
-                let mathExpr = command.replace(/(what is|whats|calculate)/gi, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
+                // Parse spoken word numbers first, then compile symbols
+                let mathExpr = convertSpokenNumbers(command)
+                    .replace(/(what is|whats|calculate)/gi, '')
+                    .replace(/plus/gi, '+')
+                    .replace(/minus/gi, '-')
+                    .replace(/(times|multiplied by)/gi, '*')
+                    .replace(/divided by/gi, '/')
+                    .replace(/x/gi, '*')
+                    .trim();
                 
-                // Check if it's purely a math equation
+                // Strict Math Regex (Only digits and mathematical operator symbols allowed)
                 if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
                     try {
                         const result = new Function('return ' + mathExpr)();
@@ -307,14 +354,11 @@
                 // If not math, Smart Search Wikipedia
                 const query = command.replace(/^(what is|whats|who is|whos|tell me about)\s+/gi, '').trim();
                 try {
-                    // Step 1: OpenSearch API to find the *exact* Wikipedia article title
                     const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
                     const searchData = await searchRes.json();
                     
                     if (searchData[1] && searchData[1].length > 0) {
                         const exactTitle = searchData[1][0];
-                        
-                        // Step 2: Fetch the summary for that exact title
                         const summaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`);
                         const summaryData = await summaryRes.json();
                         
@@ -326,9 +370,9 @@
                             return;
                         }
                     }
-                    await speak(`I'm not exactly sure about that.`);
+                    await speak("Sorry, I didn't quite get that.");
                 } catch (e) {
-                    await speak(`I'm not exactly sure about that.`);
+                    await speak("Sorry, I didn't quite get that.");
                 }
             }
             
@@ -360,6 +404,15 @@
                 await speak("Opening Outlook to draft a new message.");
             }
 
+            // 11. FALLBACK VERBAL FEEDBACK (If no command matches)
+            else {
+                const sorryResponses = [
+                    "Sorry, I didn't understand.",
+                    "Sorry, I didn't quite get that."
+                ];
+                await speak(sorryResponses[Math.floor(Math.random() * sorryResponses.length)]);
+            }
+
             isListeningState = false; 
         }
 
@@ -377,7 +430,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            recognition.lang = 'en-AU';
+            recognition.lang = 'en-AU'; // Australian English
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -391,8 +444,11 @@
                 }
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
-                const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car)/i;
+                
+                // Extensive Australian phonetic wake word variants mapping
+                const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car|guard|growth|glass|goy|gday|g'day|god|guitar|galah|gwara|g'war)/i;
 
+                // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
                     isListeningState = true;
                     activationSound.currentTime = 0;
@@ -404,6 +460,7 @@
                     }, 8000); 
                 }
 
+                // PROCESS FINISHED SENTENCE
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
                     
@@ -412,10 +469,12 @@
                     }
 
                     if (isListeningState) {
+                        // Filter out short background noises
                         if (commandText.length > 2 && !['uh', 'um', 'ah'].includes(commandText)) {
                             isListeningState = false;
                             clearTimeout(idleTimeout);
                             
+                            // 0.4s Delay so it doesn't cut you off mid-breath
                             setTimeout(() => {
                                 processCommand(commandText);
                             }, 400);
@@ -437,10 +496,15 @@
             }, 500);
         }
 
+        // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
+                // Request permission gracefully
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micPermissionGranted = true;
+                
+                // IMMEDIATELY close the mic lock stream tracks to release hardware for the SpeechEngine
+                stream.getTracks().forEach(track => track.stop());
             } catch (err) {
                 responseText.textContent = "Please allow microphone access to use Guahh!";
                 responseText.classList.add('visible');
