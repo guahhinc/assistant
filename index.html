@@ -75,8 +75,8 @@
 
         // SiriWave Variables
         let siriWave;
-        let currentAmplitude = 0.3; // Increased idle amplitude
-        let currentSpeed = 0.05;    // Increased idle speed
+        let currentAmplitude = 0.3; 
+        let currentSpeed = 0.05;    
 
         // Smoothly animate the SiriWave
         function animateWave() {
@@ -160,15 +160,27 @@
 
         const backupJokes = [
             "Why do programmers prefer dark mode? Because light attracts bugs.",
-            "I told my computer I needed a break, and now it won't stop sending me Kit-Kat ads.",
             "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
-            "Why did the web developer walk out of the restaurant? Because of the terrible table layout.",
-            "What is a computer's favorite beat? An algo-rhythm!"
+            "What is a computer's favorite beat? An algo-rhythm!",
+            "Why did the computer show up at work late? It had a hard drive.",
+            "What do you call a computer floating in the ocean? A Dell rolling in the deep.",
+            "Why was the mobile phone wearing glasses? It lost its contacts.",
+            "What did the spider do on the computer? Made a website.",
+            "Why did the PowerPoint presentation cross the road? To get to the other slide.",
+            "Why did the developer go broke? Because he used up all his cache.",
+            "How does a computer catch a cold? From a virus!",
+            "What do you get when you cross a computer with an elephant? Lots of memory!",
+            "Why are PCs like air conditioners? They stop working properly when you open Windows.",
+            "What is a baby computer called? A microchip.",
+            "Why did the computer squeak? Because someone stepped on its mouse!",
+            "What's an alien's favorite place on a computer? The space bar.",
+            "Why did the Wi-Fi go to therapy? It had too many connection issues."
         ];
 
         // --- SMARTER BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
-            // CANCEL COMMANDS (Do nothing and end listening state)
+            
+            // 0. CANCEL COMMANDS
             const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
             if (cancelWords.includes(command)) {
                 return; 
@@ -185,7 +197,7 @@
                 await speak("I'm doing wonderfully, thanks for asking! I'm ready to assist you.");
             }
             else if (command.includes('what can you do') || command.includes('help me')) {
-                await speak("I can open apps on your PC, calculate math, tell you the time, check the weather, play YouTube videos, and launch Roblox games.");
+                await speak("I can open apps on your PC, set reminders, calculate math, tell you the time, check the weather, play YouTube videos, and launch Roblox games.");
             }
             else if (command.includes('thank you') || command === 'thanks' || command === 'cheers') {
                 await speak("You're very welcome! Let me know if you need anything else.");
@@ -194,7 +206,8 @@
             // 2. JOKES & FACTS
             else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
                 try {
-                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?type=single');
+                    // STRICT BLACKLIST APPLIED for clean jokes only
+                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
                     const data = await res.json();
                     await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
                 } catch (e) {
@@ -202,7 +215,21 @@
                 }
             }
 
-            // 3. YOUTUBE RANDOMIZER & AUTOPLAY (Uses DuckDuckGo "I'm Feeling Lucky" Trick)
+            // 3. SET REMINDERS (Google Calendar Integration)
+            else if (command.includes('remind me to') || command.includes('set a reminder')) {
+                const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
+                if (match) {
+                    const taskText = match[1].trim();
+                    await speak(`Opening Google Calendar to set a reminder to ${taskText}.`);
+                    // Google Calendar Event Template link
+                    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(taskText)}`;
+                    window.open(calendarUrl, '_blank');
+                } else {
+                    await speak("What would you like me to remind you about?");
+                }
+            }
+
+            // 4. YOUTUBE RANDOMIZER & AUTOPLAY 
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
@@ -212,18 +239,16 @@
             else if (command.startsWith('play') && command.includes('on youtube')) {
                 const query = command.replace('play', '').replace('on youtube', '').trim();
                 await speak(`Playing ${query} on YouTube.`);
-                // !yt automatically redirects to the first YouTube search result
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // 4. ROBLOX (Fixed Proxy Logic)
+            // 5. ROBLOX 
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
                     const gameName = match[1].trim();
                     await speak(`Searching Roblox for ${gameName}...`);
                     try {
-                        // Fixed proxy using raw data to bypass the string wrapper issue
                         const url = `https://games.roblox.com/v1/games/list?keyword=${encodeURIComponent(gameName)}&maxRows=1`;
                         const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
                         const data = await res.json();
@@ -238,17 +263,17 @@
                 }
             }
 
-            // 5. STRICT TIME & DATE PARSING (Ignores Math "times")
-            else if (/(what time is it|current time|^time$|tell me the time)/i.test(command)) {
+            // 6. STRICT TIME & DATE PARSING
+            else if (/^(what time is it|current time|time|tell me the time|what's the time)$/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 await speak(`The time is currently ${time}.`);
             } 
-            else if (/(what date is it|what is the date|what day is it|^date$)/i.test(command)) {
+            else if (/^(what date is it|what is the date|what day is it|date)$/i.test(command)) {
                 const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
                 await speak(`Today is ${date}.`);
             }
             
-            // 6. WEATHER
+            // 7. WEATHER
             else if (command.includes('weather')) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
@@ -265,11 +290,11 @@
                 }
             } 
 
-            // 7. MATH & WIKIPEDIA
-            else if (command.startsWith('what is') || command.startsWith('calculate') || command.startsWith('who is')) {
-                let mathExpr = command.replace(/(what is|calculate)/g, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
+            // 8. MATH & WIKIPEDIA
+            else if (/^(what is|whats|who is|whos|calculate)\b/i.test(command)) {
+                let mathExpr = command.replace(/(what is|whats|calculate)/gi, '').replace(/plus/g, '+').replace(/minus/g, '-').replace(/times/g, '*').replace(/divided by/g, '/').replace(/x/g, '*').trim();
                 
-                // Strict Math Regex (Only numbers and operators)
+                // Check if it's purely a math equation
                 if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
                     try {
                         const result = new Function('return ' + mathExpr)();
@@ -279,24 +304,35 @@
                     } catch(e) {}
                 }
 
-                // If not math, search Wikipedia
-                const query = command.replace(/what is |who is /g, '').trim();
+                // If not math, Smart Search Wikipedia
+                const query = command.replace(/^(what is|whats|who is|whos|tell me about)\s+/gi, '').trim();
                 try {
-                    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-                    const data = await res.json();
-                    if (data.extract) {
-                        const sentences = data.extract.split('. ');
-                        const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
-                        await speak(shortSummary);
-                    } else {
-                        await speak(`I'm not exactly sure about that.`);
+                    // Step 1: OpenSearch API to find the *exact* Wikipedia article title
+                    const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
+                    const searchData = await searchRes.json();
+                    
+                    if (searchData[1] && searchData[1].length > 0) {
+                        const exactTitle = searchData[1][0];
+                        
+                        // Step 2: Fetch the summary for that exact title
+                        const summaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`);
+                        const summaryData = await summaryRes.json();
+                        
+                        if (summaryData.extract) {
+                            const sentences = summaryData.extract.split('. ');
+                            const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
+                            await speak(shortSummary);
+                            isListeningState = false;
+                            return;
+                        }
                     }
+                    await speak(`I'm not exactly sure about that.`);
                 } catch (e) {
                     await speak(`I'm not exactly sure about that.`);
                 }
             }
             
-            // 8. OPEN APPS
+            // 9. OPEN APPS
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -318,10 +354,10 @@
                 }
             }
 
-            // 9. FALLBACK (If it didn't match any above commands, do nothing so it doesn't spam)
-            else {
-                // We don't speak here so it ignores random background noise beautifully
-                console.log("Unrecognized command ignored: ", command);
+            // 10. EMAIL
+            else if (command.includes('email') || command.includes('draft')) {
+                window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
+                await speak("Opening Outlook to draft a new message.");
             }
 
             isListeningState = false; 
@@ -341,7 +377,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            recognition.lang = 'en-AU'; // Australian English
+            recognition.lang = 'en-AU';
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -357,7 +393,6 @@
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 const wakeWordRegex = /hey\s+(guahh|gua|gwa|gwah|guwa|goo a|goya|guar|goa|car)/i;
 
-                // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
                     isListeningState = true;
                     activationSound.currentTime = 0;
@@ -369,7 +404,6 @@
                     }, 8000); 
                 }
 
-                // PROCESS FINISHED SENTENCE
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
                     
@@ -378,12 +412,10 @@
                     }
 
                     if (isListeningState) {
-                        // Filters out random 1-2 letter background noise entirely
                         if (commandText.length > 2 && !['uh', 'um', 'ah'].includes(commandText)) {
                             isListeningState = false;
                             clearTimeout(idleTimeout);
                             
-                            // 0.4s Delay so it doesn't accidentally cut you off mid-breath
                             setTimeout(() => {
                                 processCommand(commandText);
                             }, 400);
@@ -405,7 +437,6 @@
             }, 500);
         }
 
-        // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
