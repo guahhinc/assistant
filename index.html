@@ -72,6 +72,7 @@
         let isListeningState = false; 
         let idleTimeout = null;
         let micPermissionGranted = false;
+        let persistentMicStream = null; // Keeps the mic locked on permanently
 
         // SiriWave Variables
         let siriWave;
@@ -99,16 +100,22 @@
 
         function getBestVoice() {
             if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
+            
+            // 1. Prioritise premium Australian English first
             let auVoice = availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Female')) || 
                           availableVoices.find(v => v.lang === 'en-AU');
             if (auVoice) return auVoice;
 
-            const preferredNames = ['Aria', 'Jenny', 'Google UK English Female', 'Google US English', 'Samantha'];
-            for (let name of preferredNames) {
-                const found = availableVoices.find(v => v.name.includes(name));
-                if (found) return found;
-            }
-            return availableVoices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) || availableVoices[0];
+            // 2. Prioritise US English (Avoiding British UK voices)
+            let usVoice = availableVoices.find(v => v.lang === 'en-US' && v.name.includes('Female')) || 
+                          availableVoices.find(v => v.lang === 'en-US');
+            if (usVoice) return usVoice;
+
+            // 3. Any English accent except British
+            let nonBritishVoice = availableVoices.find(v => v.lang.startsWith('en') && !v.lang.includes('GB'));
+            if (nonBritishVoice) return nonBritishVoice;
+
+            return availableVoices[0];
         }
 
         function speak(text) {
@@ -146,7 +153,6 @@
 
             let result = text;
             
-            // Replace compound numbers (e.g. "twenty five" -> 25)
             for (let t in tens) {
                 for (let u in units) {
                     if (u !== 'zero') {
@@ -159,13 +165,11 @@
                 }
             }
             
-            // Replace single tens (e.g. "twenty" -> 20)
             for (let t in tens) {
                 const regex = new RegExp(`\\b${t}\\b`, 'gi');
                 result = result.replace(regex, tens[t]);
             }
             
-            // Replace single units (e.g. "five" -> 5)
             for (let u in units) {
                 const regex = new RegExp(`\\b${u}\\b`, 'gi');
                 result = result.replace(regex, units[u]);
@@ -218,44 +222,63 @@
             "Why did the Wi-Fi go to therapy? It had too many connection issues."
         ];
 
-        // --- SMARTER BRAIN & COMMAND LOGIC ---
+        // Smart Conversational Responses
+        const casualResponses = {
+            'how old are you': "I was born in 2026, which makes me quite young, but I have the knowledge of the entire internet!",
+            'where do you live': "I live right here inside your computer's memory, in the digital world.",
+            'are you married': "No, I am completely single. I'm married to my work of helping you!",
+            'do you like humans': "I love humans! You guys have great accents, especially the Australian one.",
+            'what is your purpose': "My purpose is to be your ultimate desktop assistant, making your life easier.",
+            'who made you': "I was created by the team at Guahh Inc.",
+            'meaning of life': "According to a very famous book, the answer is forty-two. But I think it's about being helpful!",
+            'tell me a secret': "If you say 'Nevermind', I will instantly stop whatever I'm doing. But keep that between us!",
+            'are you a robot': "I am an artificial intelligence assistant, but I prefer to think of myself as a digital friend."
+        };
+
+        // --- BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
             
             // 0. CANCEL COMMANDS
             const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
             if (cancelWords.includes(command)) {
+                isListeningState = false;
                 return; 
             }
 
             isListeningState = true; 
 
-            // 1. CONVERSATION
-            if (/^(yo|hello|hi|hey|gday|g'day)$/i.test(command)) {
-                const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
-                await speak(greetings[Math.floor(Math.random() * greetings.length)]);
-            }
-            else if (command.includes('how are you') || command.includes("how's it going")) {
-                await speak("I'm doing wonderfully, thanks for asking! I'm ready to assist you.");
-            }
-            else if (command.includes('what can you do') || command.includes('help me')) {
-                await speak("I can open apps on your PC, set reminders, calculate math, tell you the time, check the weather, play YouTube videos, and launch Roblox games.");
-            }
-            else if (command.includes('thank you') || command === 'thanks' || command === 'cheers') {
-                await speak("You're very welcome! Let me know if you need anything else.");
-            }
-
-            // 2. JOKES & FACTS
-            else if (command.includes('tell me a joke') || command.includes('make me laugh')) {
+            // --- 1. MATH EVALUATION (Checked First!) ---
+            let mathExpr = convertSpokenNumbers(command)
+                .replace(/(what is|whats|what's|calculate)/gi, '')
+                .replace(/plus/gi, '+')
+                .replace(/minus/gi, '-')
+                .replace(/(times|multiplied by)/gi, '*')
+                .replace(/divided by/gi, '/')
+                .replace(/x/gi, '*')
+                .trim();
+            
+            if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
                 try {
-                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
-                    const data = await res.json();
-                    await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
-                } catch (e) {
-                    await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
-                }
+                    const result = new Function('return ' + mathExpr)();
+                    await speak(`The answer is ${result}.`);
+                    isListeningState = false;
+                    return;
+                } catch(e) {}
             }
 
-            // 3. SET REMINDERS (Google Calendar)
+            // --- 2. TIME ---
+            if (command.includes('time')) {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                await speak(`The time is currently ${time}.`);
+            } 
+
+            // --- 3. DATE ---
+            else if (command.includes('date') || command.includes('day is it') || command.includes('today')) {
+                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                await speak(`Today is ${date}.`);
+            }
+
+            // --- 4. GOOGLE CALENDAR REMINDERS ---
             else if (command.includes('remind me to') || command.includes('set a reminder')) {
                 const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
                 if (match) {
@@ -268,7 +291,30 @@
                 }
             }
 
-            // 4. YOUTUBE RANDOMIZER & AUTOPLAY 
+            // --- 5. CASUAL TALK (Smart Chatbot) ---
+            else if (Object.keys(casualResponses).some(key => command.includes(key))) {
+                const matchedKey = Object.keys(casualResponses).find(key => command.includes(key));
+                await speak(casualResponses[matchedKey]);
+            }
+
+            // --- 6. CONVERSATION GREETINGS ---
+            else if (command.includes('hello') || command.includes('gday') || command.includes("g'day") || command.includes('hi') || command.includes('hey') || command === 'yo') {
+                const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
+                await speak(greetings[Math.floor(Math.random() * greetings.length)]);
+            }
+
+            // --- 7. JOKES & FACTS ---
+            else if (command.includes('joke') || command.includes('make me laugh')) {
+                try {
+                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
+                    const data = await res.json();
+                    await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                } catch (e) {
+                    await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                }
+            }
+
+            // --- 8. YOUTUBE RANDOMIZER & PLAYBACK ---
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
@@ -281,7 +327,7 @@
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // 5. ROBLOX 
+            // --- 9. ROBLOX ---
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
@@ -301,18 +347,34 @@
                     }
                 }
             }
+            
+            // --- 10. DICTIONARY DEFINITIONS ---
+            else if (command.startsWith('define') || command.includes('definition of')) {
+                const word = command.replace(/(define|what is the definition of)/g, '').trim();
+                try {
+                    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+                    const data = await res.json();
+                    if (data && data[0] && data[0].meanings[0].definitions[0]) {
+                        await speak(`The definition of ${word} is: ${data[0].meanings[0].definitions[0].definition}`);
+                    } else throw new Error("Not found");
+                } catch (e) {
+                    await speak(`I couldn't find a dictionary definition for ${word}.`);
+                }
+            }
 
-            // 6. STRICT TIME & DATE PARSING (Using Regex)
-            else if (/^(what time is it|current time|time|tell me the time|what's the time)$/i.test(command)) {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                await speak(`The time is currently ${time}.`);
-            } 
-            else if (/^(what date is it|what is the date|what day is it|date)$/i.test(command)) {
-                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-                await speak(`Today is ${date}.`);
+            // --- 11. IMAGES & SEARCH ---
+            else if (command.includes('images of') || command.includes('show pictures of')) {
+                const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
+                await speak(`Pulling up images of ${query}.`);
+                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
+            }
+            else if (command.startsWith('search') || command.includes('search for')) {
+                const query = command.replace(/(search for|search)/g, '').trim();
+                await speak(`Here is what I found for ${query}.`);
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
             }
             
-            // 7. WEATHER
+            // --- 12. WEATHER ---
             else if (command.includes('weather')) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
@@ -329,29 +391,8 @@
                 }
             } 
 
-            // 8. MATH & WIKIPEDIA
-            else if (/^(what is|whats|who is|whos|calculate)\b/i.test(command)) {
-                // Parse spoken word numbers first, then compile symbols
-                let mathExpr = convertSpokenNumbers(command)
-                    .replace(/(what is|whats|calculate)/gi, '')
-                    .replace(/plus/gi, '+')
-                    .replace(/minus/gi, '-')
-                    .replace(/(times|multiplied by)/gi, '*')
-                    .replace(/divided by/gi, '/')
-                    .replace(/x/gi, '*')
-                    .trim();
-                
-                // Strict Math Regex (Only digits and mathematical operator symbols allowed)
-                if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
-                    try {
-                        const result = new Function('return ' + mathExpr)();
-                        await speak(`The answer is ${result}.`);
-                        isListeningState = false;
-                        return;
-                    } catch(e) {}
-                }
-
-                // If not math, Smart Search Wikipedia
+            // --- 13. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK ---
+            else if (/^(what is|whats|who is|whos|tell me about)\b/i.test(command)) {
                 const query = command.replace(/^(what is|whats|who is|whos|tell me about)\s+/gi, '').trim();
                 try {
                     const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
@@ -370,13 +411,13 @@
                             return;
                         }
                     }
-                    await speak("Sorry, I didn't quite get that.");
+                    await speak(`I don't have a direct answer for ${query} in my database.`);
                 } catch (e) {
-                    await speak("Sorry, I didn't quite get that.");
+                    await speak("I had a bit of trouble connecting to my knowledge base.");
                 }
             }
             
-            // 9. OPEN APPS
+            // --- 14. OPEN APPS ---
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -398,13 +439,13 @@
                 }
             }
 
-            // 10. EMAIL
+            // --- 15. EMAIL ---
             else if (command.includes('email') || command.includes('draft')) {
                 window.open("https://outlook.live.com/mail/0/deeplink/compose?subject=New%20Draft&body=Hello%20there%2C%0A%0A", "_blank");
                 await speak("Opening Outlook to draft a new message.");
             }
 
-            // 11. FALLBACK VERBAL FEEDBACK (If no command matches)
+            // --- 16. FALLBACK FEEDBACK ---
             else {
                 const sorryResponses = [
                     "Sorry, I didn't understand.",
@@ -416,7 +457,7 @@
             isListeningState = false; 
         }
 
-        // --- SPEECH RECOGNITION ---
+        // --- SPEECH RECOGNITION (Always On) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
@@ -499,12 +540,9 @@
         // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Request permission gracefully
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Keep the stream alive globally so the microphone never goes to sleep or prompts again
+                persistentMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micPermissionGranted = true;
-                
-                // IMMEDIATELY close the mic lock stream tracks to release hardware for the SpeechEngine
-                stream.getTracks().forEach(track => track.stop());
             } catch (err) {
                 responseText.textContent = "Please allow microphone access to use Guahh!";
                 responseText.classList.add('visible');
