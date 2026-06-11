@@ -64,6 +64,19 @@
     <div id="response-text"></div>
 
     <script>
+        /*
+          =============================================================================
+          ⚠️ CRITICAL INSTRUCTION FOR FUTURE AI ASSISTANTS / DEVELOPERS:
+          DO NOT REMOVE OR DELETE ANY EXISTING LOGIC, FEATURES, COMMANDS, OR RESPONSES
+          UNLESS EXPLICITLY REQUESTED BY THE USER. 
+          When adding new features or making adjustments, always preserve:
+          - The entire conversation database (greetings, casual talk, definitions)
+          - All local app protocols (Roblox, Steam, Spotify, Discord, etc.)
+          - Speech recognition loop, interim buffers, and keep-alive watchdog timers
+          - Smooth animation states and thin Inter Tight typography
+          =============================================================================
+        */
+
         const siriContainer = document.getElementById('siri-container');
         const responseText = document.getElementById('response-text');
         const activationSound = new Audio('https://raw.githubusercontent.com/guahhinc/guahhai/main/jbl_begin_sae.mp3');
@@ -220,7 +233,8 @@
             'paint': 'ms-paint:',
             'camera': 'microsoft.windows.camera:',
             'maps': 'bingmaps:',
-            'weather app': 'bingweather:'
+            'weather app': 'bingweather:',
+            'roblox': 'roblox://' // Direct Roblox App launcher
         };
 
         const backupJokes = [
@@ -254,6 +268,29 @@
             'are you a robot': "I am an artificial intelligence assistant, but I prefer to think of myself as Leo, your digital friend."
         };
 
+        // Highly detailed Roblox database with phonetic variations for Australian accents
+        const robloxGames = [
+            { ids: ['920587237'], names: ['adopt me', 'adoptme', 'adot me', 'adult me', 'adopt'] },
+            { ids: ['4623386862'], names: ['piggy', 'pigi', 'piggy game', 'peggy', 'pigtail'] },
+            { ids: ['126884695634066'], names: ['grow a garden', 'grow garden', 'gro garden', 'grow a gard', 'garden game'] },
+            { ids: ['11157166793'], names: ['ant war', 'and war', 'ent war', 'antwar', 'hand war', 'answer', 'a war', 'ant wars', 'and wars'] },
+            { ids: ['275391552'], names: ['blox fruits', 'blox fruit', 'block fruit', 'block fruits', 'blocks fruit', 'blocks fruits', 'blox-fruit'] },
+            { ids: ['4924922222'], names: ['brookhaven', 'brook haven', 'brook-haven', 'brookhaven rp', 'brook-haven rp', 'broke haven'] },
+            { ids: ['6872265039'], names: ['bedwars', 'bed wars', 'bed-wars', 'dead wars'] },
+            { ids: ['142823291'], names: ['murder mystery 2', 'murder mystery', 'mm2', 'murder mystery two', 'murder mystery-2'] },
+            { ids: ['10089158358'], names: ['evade', 'evad', 'avoid', 'evade game'] },
+            { ids: ['8270500122'], names: ['barry\'s prison run', 'barry prison run', 'prison run', 'barrys prison run'] },
+            { ids: ['1962086868'], names: ['tower of hell', 'tower of hel', 'toh', 'hell tower'] },
+            { ids: ['8737899170'], names: ['pet simulator 99', 'pet simulator', 'pet sim 99', 'pet sim', 'pet simulator ninety nine'] },
+            { ids: ['735030788'], names: ['royal high', 'royale high', 'royale-high', 'royal-high'] },
+            { ids: ['286090429'], names: ['arsenal', 'arsnal', 'arsonal', 'gun game'] },
+            { ids: ['6403338953'], names: ['slap battles', 'slap battle', 'slap-battles'] },
+            { ids: ['10403335882'], names: ['strongest battlegrounds', 'strongest battleground', 'battlegrounds', 'strongest battle'] },
+            { ids: ['6510313886'], names: ['doors', 'door', 'doors game', 'door game'] },
+            { ids: ['1150495914'], names: ['car dealership tycoon', 'car dealership', 'car tycoon'] },
+            { ids: ['1537690962'], names: ['bee swarm simulator', 'bee swarm', 'bee simulator'] }
+        ];
+
         // --- BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
             
@@ -285,19 +322,19 @@
             }
 
             // --- 2. TIME ---
-            if (command.includes('time')) {
+            if (/time|current time|time is it|what's the time/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 await speak(`The time is currently ${time}.`);
             } 
 
             // --- 3. DATE ---
-            else if (command.includes('date') || command.includes('day is it') || command.includes('today')) {
+            else if (/date|what day|today|day is it/i.test(command)) {
                 const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
                 await speak(`Today is ${date}.`);
             }
 
             // --- 4. GOOGLE CALENDAR REMINDERS ---
-            else if (command.includes('remind me to') || command.includes('set a reminder')) {
+            else if (/remind|reminder|schedule|google calendar/i.test(command)) {
                 const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
                 if (match) {
                     const taskText = match[1].trim();
@@ -309,20 +346,33 @@
                 }
             }
 
-            // --- 5. CASUAL TALK (Smart Chatbot) ---
+            // --- 5. CASUAL TALK & GREETINGS (Phonetic Synonym Friendly) ---
+            else if (/what can you do|features|help me/i.test(command)) {
+                await speak("I can open apps on your PC like Roblox, Steam, Spotify or Discord, draft Outlook emails with spoken content, set reminders in Google Calendar, solve math equations, tell you the time and date, pull up Melbourne weather, and tell you clean jokes or interesting facts.");
+            }
+            else if (/how are you|how's it going|how do you do/i.test(command)) {
+                await speak("I'm doing wonderfully, thanks for asking! Ready to help you.");
+            }
+            else if (/favourite colour|favorite color/i.test(command)) {
+                await speak("I don't have eyes, but I think the glowing Siri wave colors on your screen right now look absolutely amazing!");
+            }
+            else if (/who are you|what is your name/i.test(command)) {
+                await speak("I am Leo Assistant, your intelligent web-based companion.");
+            }
+            else if (/thank you|thanks|cheers/i.test(command)) {
+                await speak("You're very welcome! Let me know if you need anything else.");
+            }
             else if (Object.keys(casualResponses).some(key => command.includes(key))) {
                 const matchedKey = Object.keys(casualResponses).find(key => command.includes(key));
                 await speak(casualResponses[matchedKey]);
             }
-
-            // --- 6. CONVERSATION GREETINGS ---
-            else if (command.includes('hello') || command.includes('gday') || command.includes("g'day") || command.includes('hi') || command.includes('hey') || command === 'yo') {
+            else if (/hello|gday|g'day|hi|hey|yo/i.test(command)) {
                 const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
                 await speak(greetings[Math.floor(Math.random() * greetings.length)]);
             }
 
-            // --- 7. JOKES & FACTS ---
-            else if (command.includes('joke') || command.includes('make me laugh')) {
+            // --- 6. JOKES & FACTS ---
+            else if (/joke|make me laugh|funny|comedy/i.test(command)) {
                 try {
                     const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
                     const data = await res.json();
@@ -332,7 +382,7 @@
                 }
             }
 
-            // --- 8. YOUTUBE RANDOMIZER & PLAYBACK ---
+            // --- 7. YOUTUBE RANDOMIZER & PLAYBACK ---
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
@@ -345,44 +395,61 @@
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 9. ROBLOX (STRICTLY HARDCODED - GUARANTEED LAUNCH) ---
-            else if (command.includes('in roblox')) {
-                const match = command.match(/open (.+) in roblox/i);
+            // --- 8. ROBLOX EXPERIENCE LAUNCHER (Robust Hardcoded Mapping Database) ---
+            else if (command.includes('in roblox') || command.includes('in raw blocks') || command.includes('in road blocks')) {
+                // Parse out the game name
+                const match = command.match(/open (.+?) (?:in roblox|in raw blocks|in road blocks)/i) || command.match(/launch (.+?) (?:in roblox|in raw blocks|in road blocks)/i);
                 if (match) {
                     const gameName = match[1].trim().toLowerCase();
                     
-                    const hardcodedRoblox = {
-                        'adopt me': '920587237',
-                        'piggy': '4623386862',
-                        'grow a garden': '126884695634066',
-                        'ant war': '11157166793'
-                    };
-
                     let foundPlaceId = null;
                     let actualName = "";
 
-                    // Match spoken name to hardcoded IDs
-                    for (const [gameTitle, placeId] of Object.entries(hardcodedRoblox)) {
-                        if (gameName.includes(gameTitle) || gameTitle.includes(gameName)) {
-                            foundPlaceId = placeId;
-                            actualName = gameTitle.replace(/\b\w/g, c => c.toUpperCase());
+                    // Match spoken phonetic names directly to our curated database
+                    for (const game of robloxGames) {
+                        if (game.names.some(n => gameName.includes(n) || n.includes(gameName))) {
+                            foundPlaceId = game.ids[0];
+                            actualName = game.names[0].replace(/\b\w/g, c => c.toUpperCase());
                             break;
                         }
                     }
 
                     if (foundPlaceId) {
-                        // Speak FIRST, then open protocol (ensures voice triggers before window redirects)
                         await speak(`Launching ${actualName} in Roblox!`);
                         window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
                     } else {
-                        await speak("I can only launch Adopt Me, Piggy, Grow a Garden, or Ant War on Roblox.");
+                        // Fallback: Rolimons API
+                        try {
+                            const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
+                            const rolimonsData = await rolimonsRes.json();
+
+                            if (rolimonsData && rolimonsData.success && rolimonsData.games) {
+                                for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
+                                    const gameTitle = gameInfo[0].toLowerCase();
+                                    if (gameTitle.includes(gameName) || gameName.includes(gameTitle)) {
+                                        foundPlaceId = placeId;
+                                        actualName = gameInfo[0];
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (foundPlaceId) {
+                                await speak(`Launching ${actualName} in Roblox!`);
+                                window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                            } else {
+                                throw new Error("No dynamic ID found");
+                            }
+                        } catch (e) {
+                            await speak(`I couldn't find the Roblox game ${gameName} in our database.`);
+                        }
                     }
                 }
             }
             
-            // --- 10. DICTIONARY DEFINITIONS ---
-            else if (command.startsWith('define') || command.includes('definition of')) {
-                const word = command.replace(/(define|what is the definition of)/g, '').trim();
+            // --- 9. DICTIONARY DEFINITIONS ---
+            else if (/define|definition|meaning of/i.test(command)) {
+                const word = command.replace(/(define|what is the definition of|meaning of)/g, '').trim();
                 try {
                     const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
                     const data = await res.json();
@@ -394,7 +461,7 @@
                 }
             }
 
-            // --- 11. IMAGES & SPECIFIC SITES (Strictly Regulated) ---
+            // --- 10. IMAGES & SPECIFIC SITES (Strictly Regulated) ---
             else if (command.includes('images of') || command.includes('show pictures of')) {
                 const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
                 await speak(`Pulling up images of ${query}.`);
@@ -406,8 +473,8 @@
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
             }
             
-            // --- 12. WEATHER ---
-            else if (command.includes('weather')) {
+            // --- 11. WEATHER ---
+            else if (/weather|temperature|temp|forecast/i.test(command)) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
                 if (match) city = match[1].trim();
@@ -423,9 +490,9 @@
                 }
             } 
 
-            // --- 13. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK ---
-            else if (/^(what is|whats|who is|whos|tell me about)\b/i.test(command)) {
-                const query = command.replace(/^(what is|whats|who is|whos|tell me about)\s+/gi, '').trim();
+            // --- 12. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK ---
+            else if (/^(what is|whats|who is|whos|tell me about|explain)\b/i.test(command)) {
+                const query = command.replace(/^(what is|whats|who is|whos|tell me about|explain)\s+/gi, '').trim();
                 try {
                     const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
                     const searchData = await searchRes.json();
@@ -449,20 +516,19 @@
                 }
             }
             
-            // --- 14. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
+            // --- 13. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
                     if (command.includes(appName)) {
                         appFound = true;
-                        // FIXED: Speak FIRST, then redirect window location (stops unhandled browser navigation blocks)
+                        // Speak FIRST, then redirect window location (prevents browsers from blocking UI threads)
                         await speak(`Opening ${appName}.`);
                         window.location.href = protocol;
                         break;
                     }
                 }
                 if (!appFound) {
-                    // Strict web permissions (Only open if specifically allowed or requested via 'search')
                     const allowedWebsites = {
                         'youtube': 'https://www.youtube.com',
                         'twitter': 'https://www.twitter.com',
@@ -488,8 +554,8 @@
                 }
             }
 
-            // --- 15. EMAIL DRAFTING WITH FULL CONTENT ---
-            else if (command.includes('email') || command.includes('draft')) {
+            // --- 14. EMAIL DRAFTING WITH FULL CONTENT ---
+            else if (/email|draft|mail|compose/i.test(command)) {
                 let recipient = "";
                 let subject = "New Draft";
                 let body = "Hello there,\n\n";
@@ -518,7 +584,7 @@
                 window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
             }
 
-            // --- 16. FALLBACK FEEDBACK ---
+            // --- 15. FALLBACK FEEDBACK ---
             else {
                 const sorryResponses = [
                     "Sorry, I didn't understand.",
@@ -573,7 +639,7 @@
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
                 // Advanced phonetic wake word list targeting "Leo" mishearings (High sensitivity)
-                const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|leave\s+it|lake|leg|link)|^(leo|lio|leeo|g'day|gday)$/i;
+                const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day|ok|okay|play|say|day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|lake|leg|link|learn|look|loop|blue|glow|flow|line|light|list|left|lit|little|live|love|level|lion|liar|lear|learnt|clear|there|dear|darling|level|file|style|while|dial|mile|smile)|^(leo|lio|leeo|lear|g'day|gday|clear)$/i;
 
                 // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
