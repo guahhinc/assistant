@@ -80,21 +80,24 @@
             font-size: 1rem;
             color: rgba(255, 255, 255, 0.35);
             cursor: pointer;
-            padding: 8px 20px;
-            transition: color 0.2s, border-bottom 0.2s;
+            padding: 12px 24px; /* Increased hitboxes */
+            transition: color 0.2s, border-bottom 0.2s, background-color 0.2s;
             border-bottom: 2px solid transparent;
             font-weight: 400;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            border-radius: 8px;
         }
         
+        .hub-tab:hover {
+            color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(255, 255, 255, 0.03); /* Subtle tab spacing highlighting */
+        }
+
         .hub-tab.active {
             color: #ffffff;
             border-bottom: 2px solid #ffffff;
-        }
-
-        .hub-tab:hover {
-            color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.05);
         }
 
         /* Sleek scrollbars for lists */
@@ -115,66 +118,69 @@
     
     <!-- Seamless Hub Overlay Menu -->
     <div id="settings-modal">
-        <!-- Tab Navigation Menu Header -->
-        <div style="display: flex; gap: 15px; margin-bottom: 45px;">
-            <div id="tab-history" class="hub-tab active" onclick="switchHubTab('history')">History</div>
-            <div id="tab-reminders" class="hub-tab" onclick="switchHubTab('reminders')">Reminders</div>
-            <div id="tab-passwords" class="hub-tab" onclick="switchHubTab('passwords')">Passwords</div>
-            <div id="tab-settings" class="hub-tab" onclick="switchHubTab('settings')">Settings</div>
-        </div>
+        <!-- Centered Column Hub Wrapper (Intercepts clicks so top bar spaces don't close on accident) -->
+        <div id="hub-wrapper" style="width: 100%; max-width: 650px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100%; box-sizing: border-box;">
+            <!-- Tab Navigation Menu Header -->
+            <div style="display: flex; gap: 15px; margin-bottom: 45px; justify-content: center; width: 100%;">
+                <div id="tab-history" class="hub-tab active" onclick="switchHubTab('history')">History</div>
+                <div id="tab-reminders" class="hub-tab" onclick="switchHubTab('reminders')">Reminders</div>
+                <div id="tab-passwords" class="hub-tab" onclick="switchHubTab('passwords')">Passwords</div>
+                <div id="tab-settings" class="hub-tab" onclick="switchHubTab('settings')">Settings</div>
+            </div>
 
-        <!-- Panel: Conversation History -->
-        <div id="panel-history" style="width: 100%; max-width: 600px; display: flex; flex-direction: column; height: calc(100% - 120px);">
-            <div id="history-container" style="flex-grow: 1; height: 350px; overflow-y: auto; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 15px; padding-right: 5px;">
-                <!-- Conversation bubbles populated dynamically -->
-            </div>
-            <!-- Interactive typing hub input (Protected from Password manager triggers) -->
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <input type="text" id="type-input" placeholder="Type a message or command to Leo..." autocomplete="off" style="flex-grow: 1; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-family: inherit; outline: none; font-size: 0.95rem;" onkeydown="if(event.key === 'Enter') sendTypedCommand();" />
-                <button onclick="sendTypedCommand()" style="background: #fff; color: #000; border: none; padding: 0 25px; border-radius: 10px; font-family: inherit; font-weight: 500; cursor: pointer; transition: opacity 0.2s;">Send</button>
-            </div>
-        </div>
-
-        <!-- Panel: Reminders (Native Local Storage reminders database) -->
-        <div id="panel-reminders" style="width: 100%; max-width: 600px; display: none; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 style="font-weight: 400; margin: 0; letter-spacing: -0.02em; font-size: 1.4rem;">Reminders</h3>
-            </div>
-            <!-- Interactive manual reminder insertion fields -->
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                <input type="text" id="manual-reminder-text" placeholder="Reminder task description..." autocomplete="off" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; box-sizing: border-box;" />
+            <!-- Panel: Conversation History -->
+            <div id="panel-history" style="width: 100%; display: flex; flex-direction: column; height: calc(100% - 120px); box-sizing: border-box;">
+                <div id="history-container" style="flex-grow: 1; height: 350px; overflow-y: auto; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 15px; padding-right: 5px;">
+                    <!-- Conversation bubbles populated dynamically -->
+                </div>
+                <!-- Interactive typing hub input (Protected from Password manager triggers) -->
                 <div style="display: flex; gap: 10px; width: 100%;">
-                    <input type="datetime-local" id="manual-reminder-time" style="flex-grow: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; box-sizing: border-box; color-scheme: dark;" />
-                    <button onclick="addManualReminder()" style="background: #fff; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-family: inherit; font-weight: 500; cursor: pointer; font-size: 0.9rem;">Add</button>
+                    <input type="text" id="type-input" placeholder="Type a message or command to Leo..." autocomplete="off" style="flex-grow: 1; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-family: inherit; outline: none; font-size: 0.95rem;" onkeydown="if(event.key === 'Enter') sendTypedCommand();" />
+                    <button onclick="sendTypedCommand()" style="background: #fff; color: #000; border: none; padding: 0 25px; border-radius: 10px; font-family: inherit; font-weight: 500; cursor: pointer; transition: opacity 0.2s;">Send</button>
                 </div>
             </div>
-            <div id="reminders-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 5px;">
-                <!-- Reminder items populated dynamically -->
-            </div>
-        </div>
 
-        <!-- Panel: Passwords Database -->
-        <div id="panel-passwords" style="width: 100%; max-width: 600px; display: none; text-align: left;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 style="font-weight: 400; margin: 0; letter-spacing: -0.02em; font-size: 1.4rem;">Saved Passwords</h3>
-                <button onclick="triggerPasswordGeneration()" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;">Generate New</button>
-            </div>
-            <div id="passwords-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
-                <!-- Password items populated dynamically -->
-            </div>
-        </div>
-
-        <!-- Panel: Configuration Settings -->
-        <div id="panel-settings" style="width: 100%; max-width: 600px; display: none; text-align: left;">
-            <div style="margin-bottom: 25px;">
-                <label for="api-key-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Gemini API Key</label>
-                <!-- Key-masking styling used to bypass 1Password and Chrome Autofill traps -->
-                <input type="text" id="api-key-input" placeholder="Paste your Gemini API key here..." autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s; -webkit-text-security: disc; text-security: disc;" />
-                <div style="font-size: 0.8rem; color: #555; margin-top: 10px; line-height: 1.5;">
-                    Leo uses <strong>gemini-3.1-flash-lite</strong> for multi-turn conversational persistence and local action control.
+            <!-- Panel: Reminders (Native Local Storage reminders database) -->
+            <div id="panel-reminders" style="width: 100%; display: none; text-align: left; box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="font-weight: 400; margin: 0; letter-spacing: -0.02em; font-size: 1.4rem;">Reminders</h3>
+                </div>
+                <!-- Interactive manual reminder insertion fields -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box; width: 100%;">
+                    <input type="text" id="manual-reminder-text" placeholder="Reminder task description..." autocomplete="off" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; box-sizing: border-box;" />
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <input type="datetime-local" id="manual-reminder-time" style="flex-grow: 1; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; box-sizing: border-box; color-scheme: dark;" />
+                        <button onclick="addManualReminder()" style="background: #fff; color: #000; border: none; padding: 0 20px; border-radius: 8px; font-family: inherit; font-weight: 500; cursor: pointer; font-size: 0.9rem;">Add</button>
+                    </div>
+                </div>
+                <div id="reminders-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding-right: 5px; width: 100%; box-sizing: border-box;">
+                    <!-- Reminder items populated dynamically -->
                 </div>
             </div>
-            <button id="close-settings" style="width: 100%; padding: 14px; background: #ffffff; color: #000000; border: none; border-radius: 10px; font-size: 1rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: opacity 0.2s;">Save & Close Menu</button>
+
+            <!-- Panel: Passwords Database -->
+            <div id="panel-passwords" style="width: 100%; display: none; text-align: left; box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="font-weight: 400; margin: 0; letter-spacing: -0.02em; font-size: 1.4rem;">Saved Passwords</h3>
+                    <button onclick="triggerPasswordGeneration()" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: background 0.2s;">Generate New</button>
+                </div>
+                <div id="passwords-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; padding-right: 5px; width: 100%; box-sizing: border-box;">
+                    <!-- Password items populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Panel: Configuration Settings -->
+            <div id="panel-settings" style="width: 100%; display: none; text-align: left; box-sizing: border-box;">
+                <div style="margin-bottom: 25px; width: 100%;">
+                    <label for="api-key-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Gemini API Key</label>
+                    <!-- Key-masking styling used to bypass 1Password and Chrome Autofill traps -->
+                    <input type="text" id="api-key-input" placeholder="Paste your Gemini API key here..." autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s; -webkit-text-security: disc; text-security: disc;" />
+                    <div style="font-size: 0.8rem; color: #555; margin-top: 10px; line-height: 1.5;">
+                        Leo uses <strong>gemini-3.1-flash-lite</strong> for multi-turn conversational persistence and local action control.
+                    </div>
+                </div>
+                <button id="close-settings" style="width: 100%; padding: 14px; background: #ffffff; color: #000000; border: none; border-radius: 10px; font-size: 1rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: opacity 0.2s;">Save & Close Menu</button>
+            </div>
         </div>
     </div>
 
@@ -532,6 +538,7 @@
 
         document.getElementById('close-settings').addEventListener('click', closeSettings);
         
+        // Prevent clicking inside the Space Menu Wrapper column from triggering the overlay's backdrop closure
         document.getElementById('settings-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('settings-modal')) {
                 closeSettings();
@@ -903,34 +910,36 @@
         async function callGemini(userPrompt) {
             if (!geminiApiKey) return null;
 
-            // System instructions built cleanly inside the REST system payload format
-            const systemPrompt = `You are Leo, a highly intelligent voice-enabled desktop assistant.
-Your job is to parse the user's spoken command and generate a structured JSON action to control the user's web browser and PC.
+            // System instructions detailing PC operations tools for Gemini fallback execution
+            const systemPrompt = `You are Gemini, acting as the advanced reasoning core for the Leo Desktop Assistant.
+Your task is to analyze the user's input and choose the correct tool/action to perform on their PC.
 
-Available Actions:
-1. {"action": "speak", "param": "spoken text response"}
-   Use this for answers to general questions, calculations, facts, jokes, text manipulation, passwords, unit conversions, coin flipping, dice rolling, translations, etc.
-2. {"action": "open_app", "app": "app_name", "speak": "the speech confirmation"}
-   Valid apps: steam, discord, vscode, spotify, epic games, calculator, clock, word, excel, powerpoint, whatsapp, telegram, zoom, slack, netflix, settings, paint, camera, maps, weather app, roblox, edge, mail, xbox, photos, onenote, github desktop.
-3. {"action": "open_web", "site": "site_name", "speak": "the speech confirmation"}
-   Valid sites: youtube, twitter, instagram, github, reddit, tiktok. Or a generic URL starting with http/https.
-4. {"action": "google_search", "query": "search query", "speak": "the speech confirmation"}
-   Performs a Google Search.
-5. {"action": "youtube_play", "query": "video description", "speak": "the speech confirmation"}
-   Plays a video/query on YouTube.
-6. {"action": "email_draft", "recipient": "name/email", "subject": "subject line", "body": "email contents", "speak": "the speech confirmation"}
-   Opens an Outlook email compose tab.
-7. {"action": "weather_check", "city": "city name", "speak": "the speech confirmation"}
-   Queries Melbourne or another city's weather.
-8. {"action": "calendar_reminder", "task": "reminder text", "speak": "the speech confirmation"}
-   Opens Google Calendar to schedule.
-9. {"action": "roblox_launch", "game": "game name", "speak": "the speech confirmation"}
-   Launches a specific game in Roblox.
+AVAILABLE TOOLS & JSON SCHEMAS:
+1. {"action": "speak", "param": "detailed text response"}
+   Use this for answering general knowledge questions, solving complex calculations, conversing, translating languages, or telling jokes/facts.
+2. {"action": "open_app", "app": "app_key_name", "speak": "spoken confirmation"}
+   Launches a native PC application.
+   Valid app_key_name options: steam, discord, vscode, spotify, epic games, calculator, clock, word, excel, powerpoint, whatsapp, telegram, zoom, slack, netflix, settings, paint, camera, maps, weather app, roblox, edge, mail, xbox, photos, onenote, github desktop.
+3. {"action": "open_web", "site": "site_key_name_or_url", "speak": "spoken confirmation"}
+   Opens a website in a new tab.
+   Valid site_key_name options: youtube, twitter, instagram, github, reddit, tiktok. You can also supply any raw HTTPS URL (e.g. "https://news.google.com").
+4. {"action": "google_search", "query": "search terms", "speak": "spoken confirmation"}
+   Performs a Google Search on the web.
+5. {"action": "youtube_play", "query": "video topic or title", "speak": "spoken confirmation"}
+   Searches and plays a video directly on YouTube.
+6. {"action": "email_draft", "recipient": "name_or_email", "subject": "subject line", "body": "email contents", "speak": "spoken confirmation"}
+   Drafts a complete email using Outlook Web deep links.
+7. {"action": "weather_check", "city": "city name", "speak": "spoken confirmation"}
+   Queries meteorological data for any specified city.
+8. {"action": "calendar_reminder", "task": "reminder description", "speak": "spoken confirmation"}
+   Uses Google Calendar templating for a reminder event.
+9. {"action": "roblox_launch", "game": "roblox game name", "speak": "spoken confirmation"}
+   Launches experiences directly inside the Roblox app.
 
-Guidelines:
-- Return strictly raw JSON. Do NOT wrap in code block characters like \`\`\`json.
-- Maintain a helpful, friendly accent profile. Keep speech confirmation brief and easy to understand when read aloud.
-- Use the "speak" action for general chatter, arithmetic, translation, or questions.`;
+CRITICAL INSTRUCTIONS:
+- You must respond ONLY with a raw JSON object matching one of the schemas above. 
+- Do NOT wrap the JSON response in markdown code blocks (e.g., do not use \`\`\`json).
+- Keep spoken text natural, brief, and designed for speech synthesis.`;
 
             // Transform conversation history array to Gemini SDK messages block format
             const contents = [];
@@ -1247,17 +1256,57 @@ Guidelines:
                 }
             }
 
-            // --- 1. MATH EVALUATION ---
-            let mathExpr = convertSpokenNumbers(command)
-                .replace(/(what is|whats|what's|calculate)/gi, '')
-                .replace(/plus/gi, '+')
-                .replace(/minus/gi, '-')
-                .replace(/(times|multiplied by)/gi, '*')
-                .replace(/divided by/gi, '/')
-                .replace(/x/gi, '*')
-                .trim();
-            
-            if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(mathExpr) && /[0-9]/.test(mathExpr)) {
+            // --- 1. LOCAL REMINDERS PARSER ---
+            if (/\b(?:remind|reminder|reminders|schedule)\b/i.test(command)) {
+                const parsed = parseReminderCommand(command);
+                const descInput = parsed.task;
+                if (descInput && descInput !== "Generic Reminder") {
+                    const newRem = {
+                        id: Date.now(),
+                        text: descInput,
+                        time: parsed.datetime.toISOString(),
+                        completed: false
+                    };
+                    let reminders = JSON.parse(localStorage.getItem('leo_saved_reminders') || '[]');
+                    reminders.push(newRem);
+                    localStorage.setItem('leo_saved_reminders', JSON.stringify(reminders));
+                    const displayTime = parsed.datetime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                    await speak(`Saved reminder to ${descInput} for ${displayTime}.`);
+                } else {
+                    await speak("What would you like me to remind you about?");
+                    lastFollowUp = 'reminder_task';
+                    triggerFollowUpListening();
+                }
+            }
+
+            // --- 2. TRANSLATOR (Stricter layout checks) ---
+            else if (/\b(?:translate|translation|how to say|how do you say)\b/i.test(command) || /\bin\s+(?:spanish|french|german|italian|japanese|chinese|mandarin|russian|portuguese|arabic|hindi)\b/i.test(command)) {
+                const match = command.match(/(?:translate|how do you say|how to say)\s+(.+)\s+(?:to|in)\s+([a-zA-Z]+)/i);
+                if (match) {
+                    const textToTranslate = match[1].trim();
+                    const targetLang = match[2].trim();
+                    await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
+                    window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
+                } else {
+                    // Simple translate fallback structure
+                    const simpleMatch = command.match(/translate\s+(.+)/i);
+                    if (simpleMatch) {
+                        const query = simpleMatch[1].trim();
+                        window.open(`https://translate.google.com/?sl=auto&tl=en&text=${encodeURIComponent(query)}&op=translate`, '_blank');
+                    }
+                }
+            }
+
+            // --- 3. MATH EVALUATION ---
+            else if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(convertSpokenNumbers(command).replace(/(what is|whats|what's|calculate)/gi, '').trim()) && /[0-9]/.test(convertSpokenNumbers(command))) {
+                let mathExpr = convertSpokenNumbers(command)
+                    .replace(/(what is|whats|what's|calculate)/gi, '')
+                    .replace(/plus/gi, '+')
+                    .replace(/minus/gi, '-')
+                    .replace(/(times|multiplied by)/gi, '*')
+                    .replace(/divided by/gi, '/')
+                    .replace(/x/gi, '*')
+                    .trim();
                 try {
                     const result = new Function('return ' + mathExpr)();
                     await speak(`The answer is ${result}.`);
@@ -1266,45 +1315,9 @@ Guidelines:
                 } catch(e) {}
             }
 
-            // --- 2. TIME (Strictly formatted to 12 hour cycle) ---
-            if (/(?:what\s+is\s+the\s+)?time|current time|time is it|what's the time|what is the time|tell me the time/i.test(command)) {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-                await speak(`The time is currently ${time}.`);
-            } 
-
-            // --- 3. DATE ---
-            else if (/(?:what\s+is\s+the\s+)?date|what\s+day|today|day is it|tell me the date/i.test(command)) {
-                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-                await speak(`Today is ${date}.`);
-            }
-
-            // --- 4. COIN FLIPPER ---
-            else if (/coin\s*(?:flip|toss)|flip\s*(?:a\s*)?coin|toss\s*(?:a\s*)?coin|spin\s*(?:a\s*)?coin/i.test(command)) {
-                const result = Math.random() < 0.5 ? 'heads' : 'tails';
-                await speak(`I flipped a coin and it landed on ${result}.`);
-            }
-
-            // --- 5. DICE ROLLER ---
-            else if (/roll\s*(?:a\s*)?(?:die|dice)|roll\s*dice|throw\s*dice/i.test(command)) {
-                const result = Math.floor(Math.random() * 6) + 1;
-                await speak(`I rolled a six-sided die and got a ${result}.`);
-            }
-
-            // --- 6. RANDOM NUMBER GENERATOR ---
-            else if (/random\s*number|pick\s*(?:a\s*)?number|choose\s*(?:a\s*)?number|generate\s*(?:a\s*)?number/i.test(command)) {
-                const rangeMatch = command.match(/between\s+(\d+)\s+and\s+(\d+)/i);
-                let min = 1, max = 100;
-                if (rangeMatch) {
-                    min = parseInt(rangeMatch[1]);
-                    max = parseInt(rangeMatch[2]);
-                }
-                const result = Math.floor(Math.random() * (max - min + 1)) + min;
-                await speak(`Your random number between ${min} and ${max} is ${result}.`);
-            }
-
-            // --- 7. SECURE PASSWORD GENERATOR (Saves persistent metadata to Browser localStorage) ---
-            else if (/generate\s*(?:a\s*)?(?:secure\s*)?password|make\s*(?:a\s*)?(?:secure\s*)?password|create\s*(?:a\s*)?(?:secure\s*)?password/i.test(command)) {
-                const lengthMatch = command.match(/length\s+(\d+)/i) || command.match(/(\d+)\s+characters/i);
+            // --- 4. SECURE PASSWORD GENERATOR (Permissive matching block captured early) ---
+            else if (/\b(?:password|passwords|passcode|pass code)\b/i.test(command)) {
+                const lengthMatch = command.match(/\b(?:length|size|of)\s+(\d+)\b/i) || command.match(/\b(\d+)\s*(?:characters|chars|digits)\b/i);
                 let length = 12;
                 if (lengthMatch) {
                     length = parseInt(lengthMatch[1]);
@@ -1334,8 +1347,37 @@ Guidelines:
                 } catch(e) {}
             }
 
+            // --- 5. COIN FLIPPER ---
+            else if (/\b(?:coin|flip|toss|heads or tails)\b/i.test(command)) {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                await speak(`I flipped a coin and it landed on ${result}.`);
+            }
+
+            // --- 6. DICE ROLLER ---
+            else if (/\b(?:dice|die|roll a die|roll dice)\b/i.test(command)) {
+                const result = Math.floor(Math.random() * 6) + 1;
+                await speak(`I rolled a six-sided die and got a ${result}.`);
+            }
+
+            // --- 7. RANDOM NUMBER GENERATOR ---
+            else if (/\b(?:number)\b/i.test(command) && /\b(?:random|pick|choose|generate|select|roll)\b/i.test(command)) {
+                const rangeMatch = command.match(/(?:between|from)\s+(\d+)\s+(?:to|and)\s+(\d+)/i) || command.match(/(\d+)\s*(?:to|and)\s*(\d+)/i);
+                let min = 1, max = 100;
+                if (rangeMatch) {
+                    min = parseInt(rangeMatch[1]);
+                    max = parseInt(rangeMatch[2]);
+                    if (min > max) {
+                        let temp = min;
+                        min = max;
+                        max = temp;
+                    }
+                }
+                const result = Math.floor(Math.random() * (max - min + 1)) + min;
+                await speak(`Your random number between ${min} and ${max} is ${result}.`);
+            }
+
             // --- 8. CRYPTO PRICING LOOKUP ---
-            else if (/crypto|price of|rate of|market of/i.test(command)) {
+            else if (/\b(?:bitcoin|ethereum|solana|doge|dogecoin|cardano|crypto|btc|eth|sol|ada)\b/i.test(command)) {
                 const coinMap = {
                     'bitcoin': 'BTC', 'btc': 'BTC',
                     'ethereum': 'ETH', 'eth': 'ETH',
@@ -1344,9 +1386,9 @@ Guidelines:
                     'cardano': 'ADA', 'ada': 'ADA'
                 };
                 let coin = 'BTC';
-                const match = command.match(/(bitcoin|ethereum|solana|doge|cardano|btc|eth|sol|ada)/i);
-                if (match && coinMap[match[1].toLowerCase()]) {
-                    coin = coinMap[match[1].toLowerCase()];
+                const coinMatch = command.match(/\b(bitcoin|ethereum|solana|doge|dogecoin|cardano|btc|eth|sol|ada)\b/i);
+                if (coinMatch) {
+                    coin = coinMap[coinMatch[1].toLowerCase()];
                 }
                 try {
                     const res = await fetch(`https://api.coinbase.com/v2/prices/${coin}-USD/spot`);
@@ -1361,7 +1403,7 @@ Guidelines:
             }
 
             // --- 9. UNIT CONVERTER ---
-            else if (/convert|conversion|convert temperature|how many/i.test(command)) {
+            else if (/\b(?:convert|conversion|celsius|fahrenheit|kilograms|pounds|kilometers|miles)\b/i.test(command)) {
                 const match = command.match(/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i);
                 if (match) {
                     const val = parseFloat(match[1]);
@@ -1400,63 +1442,90 @@ Guidelines:
                 }
             }
 
-            // --- 10. TRANSLATOR (Positioned high to prevent standard greetings hijacking) ---
-            else if (/translate|how to say|how do you say/i.test(command)) {
-                const match = command.match(/(?:translate|how do you say|how to say)\s+(.+)\s+(?:to|in)\s+([a-zA-Z]+)/i);
+            // --- 10. WEATHER ---
+            else if (/\b(?:weather|temperature|temp|forecast|raining|rain|hot|cold)\b/i.test(command)) {
+                let city = "Melbourne"; 
+                const cityMatch = command.match(/\b(?:weather|temp|temperature|forecast|raining|rain)\s+(?:in|for|at)\s+([a-zA-Z\s]+)/i) || command.match(/\b(?:in|for|at)\s+([a-zA-Z\s]+)/i);
+                if (cityMatch) {
+                    city = cityMatch[1].replace(/\b(today|tomorrow|now|this\s+week)\b/gi, '').trim();
+                }
+                try {
+                    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+                    const geoData = await geoRes.json();
+                    if (!geoData.results) throw new Error("Not found");
+                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geoData.results[0].latitude}&longitude=${geoData.results[0].longitude}&current_weather=true`);
+                    const temp = (await weatherRes.json()).current_weather.temperature;
+                    await speak(`It is ${temp} degrees in ${geoData.results[0].name}.`);
+                } catch (e) {
+                    await speak(`I couldn't fetch the weather for ${city}.`);
+                }
+            } 
+
+            // --- 11. TIME (Strictly formatted to 12 hour cycle) ---
+            else if (/\b(?:time|clock|hour|hours)\b/i.test(command)) {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                await speak(`The time is currently ${time}.`);
+            } 
+
+            // --- 12. DATE ---
+            else if (/\b(?:date|day|today|tomorrow)\b/i.test(command)) {
+                const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+                await speak(`Today is ${date}.`);
+            }
+
+            // --- 13. JOKES & FACTS ---
+            else if (/\b(?:joke|jokes|funny|laugh|comedy|fact|facts|interesting)\b/i.test(command)) {
+                if (command.includes('joke') || command.includes('laugh') || command.includes('funny') || command.includes('comedy')) {
+                    try {
+                        const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
+                        const data = await res.json();
+                        await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                    } catch (e) {
+                        await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
+                    }
+                } else {
+                    try {
+                        const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
+                        const data = await res.json();
+                        await speak(data.text || backupFacts[Math.floor(Math.random() * backupFacts.length)]);
+                    } catch (e) {
+                        await speak(backupFacts[Math.floor(Math.random() * backupFacts.length)]);
+                    }
+                }
+            }
+
+            // --- 14. DICTIONARY DEFINITIONS ---
+            else if (/\b(?:define|definition|meaning)\b/i.test(command)) {
+                const match = command.match(/(?:define|definition of|meaning of)\s+(.+)/i) || command.match(/(?:define|definition|meaning)\s+(.+)/i);
                 if (match) {
-                    const textToTranslate = match[1].trim();
-                    const targetLang = match[2].trim();
-                    await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
-                    window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
+                    const word = match[1].trim();
+                    try {
+                        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+                        const data = await res.json();
+                        if (data && data[0] && data[0].meanings[0].definitions[0]) {
+                            await speak(`The definition of ${word} is: ${data[0].meanings[0].definitions[0].definition}`);
+                        } else throw new Error("Not found");
+                    } catch (e) {
+                        await speak(`I couldn't find a dictionary definition for ${word}.`);
+                    }
                 }
             }
 
-            // --- 11. CASUAL TALK & GREETINGS (Stricter matching rules to keep translations safe) ---
-            else if (/what can you do|features|help me/i.test(command)) {
-                await speak("I can open apps on your PC, draft emails, solve math equations, tell you the time, date, weather, and tell you jokes or facts.");
-            }
-            else if (/how are you|how's it going|how do you do/i.test(command)) {
-                await speak("I'm doing wonderfully, thanks for asking! Ready to help you.");
-            }
-            else if (/favourite colour|favorite color/i.test(command)) {
-                await speak("I don't have eyes, but I think the glowing Siri wave colors on your screen right now look absolutely amazing!");
-            }
-            else if (/who are you|what is your name/i.test(command)) {
-                await speak("I am Leo Assistant, your intelligent web-based companion.");
-            }
-            else if (/thank you|thanks|cheers/i.test(command)) {
-                await speak("You're very welcome! Let me know if you need anything else.");
-            }
-            else if (Object.keys(casualResponses).some(key => command.includes(key))) {
-                const matchedKey = Object.keys(casualResponses).find(key => command.includes(key));
-                await speak(casualResponses[matchedKey]);
-            }
-            else if (/\b(?:hello|hi|hey|yo|howdy|whats up|sup)\b/i.test(command)) {
-                const greetings = ["Greetings!", "Hi! How can I help you today?", "Hello there!", "What's on your mind?"];
-                await speak(greetings[Math.floor(Math.random() * greetings.length)]);
-            }
-
-            // --- 12. JOKES & FACTS ---
-            else if (/joke|laugh|comedy|funny/i.test(command)) {
-                try {
-                    const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
-                    const data = await res.json();
-                    await speak(data.joke || backupJokes[Math.floor(Math.random() * backupJokes.length)]);
-                } catch (e) {
-                    await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
-                }
-            }
-            else if (/fact|interesting|something cool/i.test(command)) {
-                try {
-                    const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
-                    const data = await res.json();
-                    await speak(data.text || backupFacts[Math.floor(Math.random() * backupFacts.length)]);
-                } catch (e) {
-                    await speak(backupFacts[Math.floor(Math.random() * backupFacts.length)]);
+            // --- 15. WIKIPEDIA / GENERAL SEARCH INTERCEPTS ---
+            else if (/\b(?:search|wikipedia|lookup|look up|find)\b/i.test(command)) {
+                const match = command.match(/(?:search|look up|find|wikipedia|wikipedia search for)\s+(.+)/i) || command.match(/(?:search|wikipedia|lookup|find)\s+(.+)/i);
+                if (match) {
+                    const query = match[1].trim();
+                    await speak(`Searching Wikipedia for ${query}.`);
+                    window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank');
+                } else {
+                    await speak("What would you like me to lookup on Wikipedia?");
+                    lastFollowUp = 'search_query';
+                    triggerFollowUpListening();
                 }
             }
 
-            // --- 13. YOUTUBE RANDOMIZER & PLAYBACK ---
+            // --- 16. YOUTUBE RANDOMIZER & PLAYBACK ---
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
@@ -1475,7 +1544,7 @@ Guidelines:
                 }
             }
 
-            // --- 14. SMARTER ROBLOX LAUNCHER (Intercepts Game and Platform synonyms) ---
+            // --- 17. SMARTER ROBLOX LAUNCHER (Intercepts Game and Platform synonyms) ---
             else if (
                 robloxGames.some(game => game.names.some(name => command.includes(name))) || 
                 /roblox|raw blocks|road blocks|row blocks|rowbox|rawbox|roadbox|raw box|road box|row box/i.test(command)
@@ -1556,117 +1625,7 @@ Guidelines:
                 }
             }
             
-            // --- 15. DICTIONARY DEFINITIONS ---
-            else if (/(?:define|definition|meaning of)/i.test(command)) {
-                const match = command.match(/(?:define|definition of|meaning of)\s+(.+)/i) || command.match(/(?:define|definition|meaning of)\s+(.+)/i);
-                if (match) {
-                    const word = match[1].trim();
-                    try {
-                        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-                        const data = await res.json();
-                        if (data && data[0] && data[0].meanings[0].definitions[0]) {
-                            await speak(`The definition of ${word} is: ${data[0].meanings[0].definitions[0].definition}`);
-                        } else throw new Error("Not found");
-                    } catch (e) {
-                        await speak(`I couldn't find a dictionary definition for ${word}.`);
-                    }
-                }
-            }
-
-            // --- 16. IMAGES & SPECIFIC SITES (Wikipedia redirected Search Engine) ---
-            else if (command.includes('images of') || command.includes('show pictures of')) {
-                const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
-                await speak(`Pulling up images of ${query}.`);
-                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
-            }
-            else if (/search|wikipedia|lookup|look up|find/i.test(command)) {
-                const match = command.match(/(?:search|look up|find|wikipedia|wikipedia search for)\s+(.+)/i) || command.match(/(?:search|wikipedia|lookup|find)\s+(.+)/i);
-                if (match) {
-                    const query = match[1].trim();
-                    await speak(`Searching Wikipedia for ${query}.`);
-                    window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank');
-                } else {
-                    await speak("What would you like me to lookup on Wikipedia?");
-                    lastFollowUp = 'search_query';
-                    triggerFollowUpListening();
-                }
-            }
-            
-            // --- 17. WEATHER ---
-            else if (/weather|temperature|temp|forecast|how hot|how cold/i.test(command)) {
-                let city = "Melbourne"; 
-                const match = command.match(/weather in ([a-zA-Z\s]+)/);
-                if (match) city = match[1].trim();
-                try {
-                    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
-                    const geoData = await geoRes.json();
-                    if (!geoData.results) throw new Error("Not found");
-                    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geoData.results[0].latitude}&longitude=${geoData.results[0].longitude}&current_weather=true`);
-                    const temp = (await weatherRes.json()).current_weather.temperature;
-                    await speak(`It is ${temp} degrees in ${geoData.results[0].name}.`);
-                } catch (e) {
-                    await speak(`I couldn't fetch the weather for ${city}.`);
-                }
-            } 
-
-            // --- 18. NATIVE LOCAL REMINDERS PARSER ---
-            else if (/remind|reminder|schedule|set\s*(?:a\s*)?reminder/i.test(command)) {
-                const parsed = parseReminderCommand(command);
-                const descInput = parsed.task;
-                if (descInput && descInput !== "Generic Reminder") {
-                    const newRem = {
-                        id: Date.now(),
-                        text: descInput,
-                        time: parsed.datetime.toISOString(),
-                        completed: false
-                    };
-                    let reminders = JSON.parse(localStorage.getItem('leo_saved_reminders') || '[]');
-                    reminders.push(newRem);
-                    localStorage.setItem('leo_saved_reminders', JSON.stringify(reminders));
-                    const displayTime = parsed.datetime.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-                    await speak(`Saved reminder to ${descInput} for ${displayTime}.`);
-                } else {
-                    await speak("What would you like me to remind you about?");
-                    lastFollowUp = 'reminder_task';
-                    triggerFollowUpListening();
-                }
-            }
-
-            // --- 19. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK (Smarter Web Search Fallback) ---
-            else if (/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\b/i.test(command)) {
-                const query = command.replace(/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\s+/gi, '').trim();
-                try {
-                    const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
-                    const searchData = await searchRes.json();
-                    
-                    if (searchData[1] && searchData[1].length > 0) {
-                        const exactTitle = searchData[1][0];
-                        const summaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(exactTitle)}`);
-                        const summaryData = await summaryRes.json();
-                        
-                        if (summaryData.extract) {
-                            const sentences = summaryData.extract.split('. ');
-                            const shortSummary = sentences[0] + (sentences[1] ? '. ' + sentences[1] + '.' : '.');
-                            await speak(shortSummary);
-                            isListeningState = false;
-                            return;
-                        }
-                    }
-                    
-                    // Route to smart Google search fallback
-                    currentSearchQuery = query;
-                    await speak(`I couldn't find a direct article on ${query}. Would you like me to search Google?`);
-                    lastFollowUp = 'google_search_confirm';
-                    triggerFollowUpListening();
-                } catch (e) {
-                    currentSearchQuery = query;
-                    await speak(`I had trouble reaching my database. Would you like me to search Google for ${query} instead?`);
-                    lastFollowUp = 'google_search_confirm';
-                    triggerFollowUpListening();
-                }
-            }
-            
-            // --- 20. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
+            // --- 18. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
             else if (command.includes('open') || command.includes('launch') || command.includes('go to')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -1714,7 +1673,7 @@ Guidelines:
                 }
             }
 
-            // --- 21. EMAIL DRAFTING WITH FULL CONTENT ---
+            // --- 19. EMAIL DRAFTING WITH FULL CONTENT ---
             else if (/email|draft|mail|compose/i.test(command)) {
                 let recipient = "";
                 let subject = "New Draft";
@@ -1755,7 +1714,7 @@ Guidelines:
                 }
             }
 
-            // --- 22. COUPLING DISCONNECT FALLBACK (Gemini Remote Reasoner) ---
+            // --- 20. COUPLING DISCONNECT FALLBACK (Gemini Remote Reasoner) ---
             else {
                 if (geminiApiKey) {
                     await speak("Thinking...");
