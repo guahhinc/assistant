@@ -74,6 +74,7 @@
         let idleTimeout = null;
         let micPermissionGranted = false;
         let persistentMicStream = null;
+        let recognitionActive = false; // Tracks Speech Recognition status
 
         // SiriWave Variables
         let siriWave;
@@ -344,74 +345,37 @@
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 9. ROBLOX (Hardcoded IDs + Scraper Proxy Fallback) ---
+            // --- 9. ROBLOX (STRICTLY HARDCODED - GUARANTEED LAUNCH) ---
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
                     const gameName = match[1].trim().toLowerCase();
-                    await speak(`Searching Roblox for ${gameName}...`);
-                    try {
-                        // Core Hardcoded Game ID Map to bypass name/emoji changes
-                        const hardcodedRoblox = {
-                            'adopt me': '920587237',
-                            'piggy': '4623386862',
-                            'grow a garden': '126884695634066',
-                            'ant war': '11157166793'
-                        };
+                    
+                    const hardcodedRoblox = {
+                        'adopt me': '920587237',
+                        'piggy': '4623386862',
+                        'grow a garden': '126884695634066',
+                        'ant war': '11157166793'
+                    };
 
-                        let foundPlaceId = null;
-                        let actualName = "";
+                    let foundPlaceId = null;
+                    let actualName = "";
 
-                        // Step A: Check hardcoded games first
-                        for (const [gameTitle, placeId] of Object.entries(hardcodedRoblox)) {
-                            if (gameName.includes(gameTitle) || gameTitle.includes(gameName)) {
-                                foundPlaceId = placeId;
-                                actualName = gameTitle.replace(/\b\w/g, c => c.toUpperCase()); // Format to Title Case
-                                break;
-                            }
+                    // Match spoken name to hardcoded IDs
+                    for (const [gameTitle, placeId] of Object.entries(hardcodedRoblox)) {
+                        if (gameName.includes(gameTitle) || gameTitle.includes(gameName)) {
+                            foundPlaceId = placeId;
+                            actualName = gameTitle.replace(/\b\w/g, c => c.toUpperCase());
+                            break;
                         }
+                    }
 
-                        if (foundPlaceId) {
-                            await speak(`Launching ${actualName} in Roblox!`);
-                            window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
-                        } else {
-                            // Step B: Fallback to Rolimons direct API search
-                            const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
-                            const rolimonsData = await rolimonsRes.json();
-
-                            if (rolimonsData && rolimonsData.success && rolimonsData.games) {
-                                for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
-                                    const gameTitle = gameInfo[0].toLowerCase();
-                                    if (gameTitle.includes(gameName) || gameName.includes(gameTitle)) {
-                                        foundPlaceId = placeId;
-                                        actualName = gameInfo[0];
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (foundPlaceId) {
-                                await speak(`Launching ${actualName} in Roblox!`);
-                                window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
-                            } else {
-                                // Step C: Ultimate crawler proxy fallback
-                                const searchUrl = `https://html.duckduckgo.com/html/?q=site:roblox.com/games/+${encodeURIComponent(gameName)}`;
-                                const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
-                                const htmlText = await res.text();
-                                
-                                const placeIdMatch = htmlText.match(/roblox\.com(?:%2F|\/)games(?:%2F|\/)(\d+)/i) || htmlText.match(/roblox\.com\/games\/(\d+)/i);
-                                
-                                if (placeIdMatch && placeIdMatch[1]) {
-                                    const placeId = placeIdMatch[1];
-                                    await speak(`Launching ${gameName} in Roblox!`);
-                                    window.location.href = `roblox://experiences/start?placeId=${placeId}`;
-                                } else {
-                                    throw new Error("No ID found");
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        await speak(`I couldn't find the Roblox game ${gameName}.`);
+                    if (foundPlaceId) {
+                        // Speak FIRST, then open protocol (ensures voice triggers before window redirects)
+                        await speak(`Launching ${actualName} in Roblox!`);
+                        window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                    } else {
+                        await speak("I can only launch Adopt Me, Piggy, Grow a Garden, or Ant War on Roblox.");
                     }
                 }
             }
@@ -490,9 +454,10 @@
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
                     if (command.includes(appName)) {
-                        window.location.href = protocol;
-                        await speak(`Opening ${appName}.`);
                         appFound = true;
+                        // FIXED: Speak FIRST, then redirect window location (stops unhandled browser navigation blocks)
+                        await speak(`Opening ${appName}.`);
+                        window.location.href = protocol;
                         break;
                     }
                 }
@@ -549,8 +514,8 @@
                     ? `Hi ${recipient},\n\n${body}` 
                     : body;
 
-                window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
                 await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
+                window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
             }
 
             // --- 16. FALLBACK FEEDBACK ---
@@ -569,6 +534,15 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
+        function restartRecognition() {
+            if (isSpeaking) return; // Don't interrupt spoken feedback
+            try {
+                recognition.start();
+            } catch (e) {
+                // Ignore if already running
+            }
+        }
+
         function initSpeechRecognition() {
             if (!SpeechRecognition) {
                 responseText.textContent = "Voice recognition not supported. Use Chrome or Edge.";
@@ -580,6 +554,10 @@
             recognition.continuous = true;
             recognition.interimResults = true; 
             recognition.lang = 'en-AU'; 
+
+            recognition.onstart = () => {
+                recognitionActive = true;
+            };
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -633,16 +611,19 @@
             };
 
             recognition.onend = () => {
-                if (!isSpeaking && micPermissionGranted) {
-                    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
-                } else if (micPermissionGranted) {
-                    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 1500);
-                }
+                recognitionActive = false;
+                restartRecognition();
             };
 
-            setTimeout(() => {
-                try { recognition.start(); } catch(e) {}
-            }, 500);
+            // Watchdog Keep-Alive Loop: Resolves flakiness/stalls by forcing restart every 2.5s if silently closed
+            setInterval(() => {
+                if (!recognitionActive && !isSpeaking && micPermissionGranted) {
+                    console.log("Watchdog Keep-Alive: Waking Speech Recognition up.");
+                    restartRecognition();
+                }
+            }, 2500);
+
+            restartRecognition();
         }
 
         // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
