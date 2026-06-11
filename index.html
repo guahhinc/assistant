@@ -1,23 +1,3 @@
-An updated version of the assistant.html script has been prepared to address
-your requests.
-
-Key Corrections:
-
-1.  Bulletproof Clipboard Copying: Separated the clipboard actions into a
-    multi-tiered approach. It attempts the modern asynchronous
-    navigator.clipboard.writeText API, and if blocked (due to iframe contexts,
-    sandbox limitations, or non-secure origins), instantly cascades to an
-    engineered, hidden DOM selection fallback using document.execCommand('copy')
-    with localized execution tracking.
-2.  Reverted back to Gemini: Returned the model core routing back to Google's
-    native REST endpoint
-    (https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent)
-    with its native systemInstruction payload structure.
-3.  Menu Label Updates: Restored the configuration tab name in the Space Menu to
-    "Gemini API Key".
-
-Here is the complete, functional delivery:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
