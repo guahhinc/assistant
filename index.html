@@ -55,10 +55,154 @@
             opacity: 1;
             transform: translateY(0) scale(1);
         }
+
+        /* Settings Modal Styling */
+        #settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .settings-content {
+            background: rgba(18, 18, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            font-family: 'Inter Tight', sans-serif;
+            font-weight: 300;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
+        .settings-title {
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 25px;
+            letter-spacing: -0.03em;
+            color: #fff;
+            margin-top: 0;
+        }
+
+        .settings-label {
+            display: block;
+            text-align: left;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .settings-input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .settings-btn {
+            width: 100%;
+            padding: 14px;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+            margin-top: 10px;
+        }
+
+        .settings-btn:hover {
+            background: #e5e5e5;
+        }
+
+        .settings-btn:active {
+            transform: scale(0.98);
+        }
+
+        .settings-hint {
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 10px;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .settings-hint strong {
+            color: #aaa;
+        }
+
+        .settings-hotkeys {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: left;
+            font-size: 0.8rem;
+            color: #777;
+            line-height: 1.6;
+        }
+
+        .settings-hotkeys kbd {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
     
+    <!-- Settings Menu Modal -->
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2 class="settings-title">Leo Settings</h2>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label for="api-key-input" class="settings-label">Gemini API Key</label>
+                <input type="password" id="api-key-input" placeholder="Paste your Gemini API key here..." class="settings-input" />
+                <div class="settings-hint">
+                    Leo will use <strong>gemini-3.1-flash-lite</strong> as an intelligent fallback and remote command controller.
+                </div>
+            </div>
+            <button id="close-settings" class="settings-btn">Save & Close</button>
+            <div class="settings-hotkeys">
+                <div>• Press <kbd>/</kbd> to open this settings menu.</div>
+                <div>• Press <kbd>Esc</kbd> to save and close.</div>
+            </div>
+        </div>
+    </div>
+
     <!-- SiriWave Library Target Container -->
     <div id="siri-container"></div>
     <div id="response-text"></div>
@@ -90,6 +234,9 @@
         let lastFollowUp = null; // Tracks current follow-up context
         let currentEmailDraft = { recipient: '', subject: '', body: '' };
         let currentSearchQuery = ""; // Caches search query for interactive search fallback
+
+        // Settings Key Configuration
+        let geminiApiKey = localStorage.getItem('leo_gemini_api_key') || '';
 
         // SiriWave Variables
         let siriWave;
@@ -350,6 +497,276 @@
             { ids: ['69184822'], names: ['theme park tycoon 2', 'theme park tycoon', 'theme park tycoon two', 'tpt2', 'themepark tycoon', 'rollercoaster game', 'theme park game'] },
             { ids: ['3398014311'], names: ['restaurant tycoon 2', 'restaurant tycoon', 'restaurant tycoon two', 'restaurant game', 'cook game'] }
         ];
+
+        // Settings Menu Logic
+        window.addEventListener('keydown', (e) => {
+            const isInputFocused = document.activeElement && 
+                                  (document.activeElement.tagName === 'INPUT' || 
+                                   document.activeElement.tagName === 'TEXTAREA');
+            if (e.key === '/' && !isInputFocused) {
+                e.preventDefault();
+                openSettings();
+            }
+            if (e.key === 'Escape') {
+                closeSettings();
+            }
+        });
+
+        function openSettings() {
+            const modal = document.getElementById('settings-modal');
+            const input = document.getElementById('api-key-input');
+            input.value = geminiApiKey;
+            modal.style.display = 'flex';
+            input.focus();
+        }
+
+        function closeSettings() {
+            const modal = document.getElementById('settings-modal');
+            const input = document.getElementById('api-key-input');
+            geminiApiKey = input.value.trim();
+            localStorage.setItem('leo_gemini_api_key', geminiApiKey);
+            modal.style.display = 'none';
+        }
+
+        document.getElementById('close-settings').addEventListener('click', closeSettings);
+        
+        document.getElementById('settings-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('settings-modal')) {
+                closeSettings();
+            }
+        });
+
+        // --- GEMINI 3.1 FLASH-LITE API CLIENT ---
+        async function callGemini(userPrompt) {
+            if (!geminiApiKey) return null;
+
+            const systemPrompt = `You are Leo, a highly intelligent voice-enabled desktop assistant.
+Your job is to parse the user's spoken command and generate a structured JSON action to control the user's web browser and PC.
+
+Available Actions:
+1. {"action": "speak", "param": "spoken text response"}
+   Use this for answers to general questions, calculations, facts, jokes, text manipulation, cryptology base64 tasks, passwords, unit conversions, coin flipping, dice rolling, translations, etc.
+2. {"action": "open_app", "app": "app_name", "speak": "the speech confirmation"}
+   Valid apps: steam, discord, vscode, spotify, epic games, calculator, clock, word, excel, powerpoint, whatsapp, telegram, zoom, slack, netflix, settings, paint, camera, maps, weather app, roblox.
+3. {"action": "open_web", "site": "site_name", "speak": "the speech confirmation"}
+   Valid sites: youtube, twitter, instagram, github, reddit, tiktok. Or a generic URL starting with http/https.
+4. {"action": "google_search", "query": "search query", "speak": "the speech confirmation"}
+   Performs a Google Search.
+5. {"action": "youtube_play", "query": "video description", "speak": "the speech confirmation"}
+   Plays a video/query on YouTube.
+6. {"action": "email_draft", "recipient": "name/email", "subject": "subject line", "body": "email contents", "speak": "the speech confirmation"}
+   Opens an Outlook email compose tab.
+7. {"action": "weather_check", "city": "city name", "speak": "the speech confirmation"}
+   Queries Melbourne or another city's weather.
+8. {"action": "calendar_reminder", "task": "reminder text", "speak": "the speech confirmation"}
+   Opens Google Calendar to schedule.
+9. {"action": "roblox_launch", "game": "game name", "speak": "the speech confirmation"}
+   Launches a specific game in Roblox.
+
+Guidelines:
+- Return strictly raw JSON. Do NOT wrap in code block characters like \`\`\`json.
+- Maintain a helpful, friendly Australian-accent friendly persona. Keep speech confirmation brief and easy to understand when read aloud.
+- Use the "speak" action for general chatter, arithmetic, translation, or questions.
+
+User Request: "${userPrompt}"`;
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: systemPrompt
+                            }]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gemini API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text.trim();
+                
+                let cleanedJson = jsonText;
+                if (cleanedJson.startsWith("```json")) {
+                    cleanedJson = cleanedJson.replace(/^```json/, "");
+                }
+                if (cleanedJson.endsWith("```")) {
+                    cleanedJson = cleanedJson.slice(0, -3);
+                }
+                cleanedJson = cleanedJson.trim();
+
+                return JSON.parse(cleanedJson);
+            } catch (e) {
+                console.error("Gemini invocation failed:", e);
+                return null;
+            }
+        }
+
+        async function executeGeminiAction(result) {
+            if (!result || !result.action) {
+                await speak("I couldn't process that command.");
+                return;
+            }
+
+            const speakText = result.speak || result.param || "";
+            const action = result.action.toLowerCase();
+
+            switch (action) {
+                case 'speak':
+                    const textToSay = result.param || result.text || result.speak || "";
+                    if (textToSay) {
+                        await speak(textToSay);
+                    }
+                    break;
+
+                case 'open_app':
+                    const app = (result.app || result.param || "").toLowerCase();
+                    if (appProtocols[app]) {
+                        if (speakText) await speak(speakText);
+                        window.location.href = appProtocols[app];
+                    } else {
+                        await speak(`I don't know the app protocol for ${app}.`);
+                    }
+                    break;
+
+                case 'open_web':
+                    const site = (result.site || result.param || result.url || "");
+                    const allowedWebsites = {
+                        'youtube': 'https://www.youtube.com',
+                        'twitter': 'https://www.twitter.com',
+                        'instagram': 'https://www.instagram.com',
+                        'github': 'https://www.github.com',
+                        'reddit': 'https://www.reddit.com',
+                        'tiktok': 'https://www.tiktok.com'
+                    };
+                    let targetUrl = allowedWebsites[site.toLowerCase()];
+                    if (!targetUrl && (site.startsWith('http://') || site.startsWith('https://'))) {
+                        targetUrl = site;
+                    }
+                    if (targetUrl) {
+                        if (speakText) await speak(speakText);
+                        window.open(targetUrl, '_blank');
+                    } else {
+                        await speak(`I am only allowed to open certain websites, or valid URLs.`);
+                    }
+                    break;
+
+                case 'google_search':
+                    const query = result.query || result.param || "";
+                    if (query) {
+                        if (speakText) await speak(speakText);
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                    }
+                    break;
+
+                case 'youtube_play':
+                    const ytQuery = result.query || result.param || "";
+                    if (ytQuery) {
+                        if (speakText) await speak(speakText);
+                        window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(ytQuery)}`, '_blank');
+                    }
+                    break;
+
+                case 'email_draft':
+                    const recipient = result.recipient || result.to || "";
+                    const subject = result.subject || "New Draft";
+                    const body = result.body || "";
+                    const toField = recipient.includes('@') ? recipient : "";
+                    const finalBody = recipient && !recipient.includes('@') 
+                        ? `Hi ${recipient},\n\n${body}` 
+                        : body;
+
+                    if (speakText) await speak(speakText);
+                    window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
+                    break;
+
+                case 'weather_check':
+                    const city = result.city || result.param || "Melbourne";
+                    try {
+                        if (speakText) await speak(speakText);
+                        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+                        const geoData = await geoRes.json();
+                        if (!geoData.results) throw new Error("Not found");
+                        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geoData.results[0].latitude}&longitude=${geoData.results[0].longitude}&current_weather=true`);
+                        const temp = (await weatherRes.json()).current_weather.temperature;
+                        await speak(`It is ${temp} degrees in ${geoData.results[0].name}.`);
+                    } catch (e) {
+                        await speak(`I couldn't fetch the weather for ${city}.`);
+                    }
+                    break;
+
+                case 'calendar_reminder':
+                    const task = result.task || result.param || result.reminder || "";
+                    if (task) {
+                        if (speakText) await speak(speakText);
+                        const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task)}`;
+                        window.open(calendarUrl, '_blank');
+                    }
+                    break;
+
+                case 'roblox_launch':
+                    const gameQuery = (result.game || result.param || "").toLowerCase();
+                    let matchedGame = null;
+                    for (const game of robloxGames) {
+                        if (game.names.some(name => gameQuery === name || gameQuery.includes(name) || name.includes(gameQuery))) {
+                            matchedGame = game;
+                            break;
+                        }
+                    }
+
+                    if (matchedGame) {
+                        const foundPlaceId = matchedGame.ids[0];
+                        const actualName = matchedGame.names[0].replace(/\b\w/g, c => c.toUpperCase());
+                        if (speakText) await speak(speakText);
+                        else await speak(`Launching ${actualName} in Roblox!`);
+                        window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                    } else {
+                        try {
+                            const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
+                            const rolimonsData = await rolimonsRes.json();
+                            let foundPlaceId = null;
+                            let actualName = "";
+
+                            if (rolimonsData && rolimonsData.success && rolimonsData.games) {
+                                for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
+                                    const gameTitle = gameInfo[0].toLowerCase();
+                                    if (gameTitle.includes(gameQuery) || gameQuery.includes(gameTitle)) {
+                                        foundPlaceId = placeId;
+                                        actualName = gameInfo[0];
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (foundPlaceId) {
+                                if (speakText) await speak(speakText);
+                                else await speak(`Launching ${actualName} in Roblox!`);
+                                window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                            } else {
+                                await speak(`I couldn't find ${gameQuery} in Roblox.`);
+                            }
+                        } catch (e) {
+                            await speak(`I couldn't find the Roblox game ${gameQuery}.`);
+                        }
+                    }
+                    break;
+
+                default:
+                    await speak("I didn't quite understand that action.");
+                    break;
+            }
+        }
 
         // --- BRAIN & COMMAND LOGIC ---
         async function processCommand(command) {
@@ -792,8 +1209,184 @@
                 }
             }
 
-            // --- 15. FALLBACK FEEDBACK ---
+            // --- 15. COIN FLIPPER & DICE ROLLER ---
+            else if (/flip a coin|coin flip|toss a coin/i.test(command)) {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                await speak(`I flipped a coin and it landed on ${result}.`);
+            }
+            else if (/roll a die|roll a dice|roll die|roll dice/i.test(command)) {
+                const result = Math.floor(Math.random() * 6) + 1;
+                await speak(`I rolled a six-sided die and got a ${result}.`);
+            }
+
+            // --- 16. RANDOM NUMBER GENERATOR ---
+            else if (/random number|pick a number|choose a number/i.test(command)) {
+                const rangeMatch = command.match(/between\s+(\d+)\s+and\s+(\d+)/i);
+                let min = 1, max = 100;
+                if (rangeMatch) {
+                    min = parseInt(rangeMatch[1]);
+                    max = parseInt(rangeMatch[2]);
+                }
+                const result = Math.floor(Math.random() * (max - min + 1)) + min;
+                await speak(`Your random number between ${min} and ${max} is ${result}.`);
+            }
+
+            // --- 17. SECURE PASSWORD GENERATOR ---
+            else if (/generate a password|secure password|generate password/i.test(command)) {
+                const lengthMatch = command.match(/length\s+(\d+)/i) || command.match(/(\d+)\s+characters/i);
+                let length = 12;
+                if (lengthMatch) {
+                    length = parseInt(lengthMatch[1]);
+                }
+                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+                let password = "";
+                for (let i = 0; i < length; i++) {
+                    password += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                await speak(`I've generated a secure ${length}-character password for you.`);
+                responseText.textContent = `Password: ${password}`;
+                responseText.classList.add('visible');
+                try {
+                    await navigator.clipboard.writeText(password);
+                } catch(e) {}
+            }
+
+            // --- 18. CRYPTOGRAPHY (BASE64) ---
+            else if (/base64/i.test(command)) {
+                if (command.includes('encode')) {
+                    const str = command.replace(/.*encode\s+/, '').replace(/\s+to\s+base64.*/, '').trim();
+                    const encoded = btoa(str);
+                    await speak(`Encoded string copied to clipboard.`);
+                    responseText.textContent = `Base64: ${encoded}`;
+                    responseText.classList.add('visible');
+                    try {
+                        await navigator.clipboard.writeText(encoded);
+                    } catch(e) {}
+                } else if (command.includes('decode')) {
+                    const str = command.replace(/.*decode\s+/, '').replace(/\s+from\s+base64.*/, '').trim();
+                    try {
+                        const decoded = atob(str);
+                        await speak(`Decoded text is: ${decoded}`);
+                    } catch(e) {
+                        await speak("I couldn't decode that string. Make sure it's valid base64.");
+                    }
+                }
+            }
+
+            // --- 19. UNIT CONVERTER ---
+            else if (/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i.test(command)) {
+                const match = command.match(/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i);
+                if (match) {
+                    const val = parseFloat(match[1]);
+                    const from = match[2].toLowerCase();
+                    const to = match[3].toLowerCase();
+                    let resVal = null;
+                    let unitStr = "";
+
+                    if (from === 'celsius' && to === 'fahrenheit') {
+                        resVal = (val * 9/5) + 32;
+                        unitStr = "Fahrenheit";
+                    } else if (from === 'fahrenheit' && to === 'celsius') {
+                        resVal = (val - 32) * 5/9;
+                        unitStr = "Celsius";
+                    }
+                    else if (from === 'kilograms' && to === 'pounds') {
+                        resVal = val * 2.20462;
+                        unitStr = "pounds";
+                    } else if (from === 'pounds' && to === 'kilograms') {
+                        resVal = val / 2.20462;
+                        unitStr = "kilograms";
+                    }
+                    else if (from === 'kilometers' && to === 'miles') {
+                        resVal = val * 0.621371;
+                        unitStr = "miles";
+                    } else if (from === 'miles' && to === 'kilometers') {
+                        resVal = val / 0.621371;
+                        unitStr = "kilometers";
+                    }
+
+                    if (resVal !== null) {
+                        await speak(`${val} ${from} is equivalent to ${resVal.toFixed(2)} ${unitStr}.`);
+                    } else {
+                        await speak(`I don't support converting ${from} to ${to} natively yet.`);
+                    }
+                }
+            }
+
+            // --- 20. QR CODE GENERATOR ---
+            else if (/generate a qr code|qr code for|generate qr/i.test(command)) {
+                const match = command.match(/(?:for|qr)\s+(.+)/i);
+                if (match) {
+                    const qrText = match[1].trim();
+                    await speak(`Generating your QR code.`);
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrText)}`;
+                    window.open(qrUrl, '_blank');
+                } else {
+                    await speak("What would you like me to make a QR code for?");
+                }
+            }
+
+            // --- 21. CRYPTO PRICING LOOKUP ---
+            else if (/crypto|price of (bitcoin|ethereum|solana|doge|cardano)/i.test(command)) {
+                const coinMap = {
+                    'bitcoin': 'BTC',
+                    'ethereum': 'ETH',
+                    'solana': 'SOL',
+                    'doge': 'DOGE',
+                    'dogecoin': 'DOGE',
+                    'cardano': 'ADA'
+                };
+                let coin = 'BTC';
+                const match = command.match(/price of ([a-zA-Z]+)/i);
+                if (match && coinMap[match[1].toLowerCase()]) {
+                    coin = coinMap[match[1].toLowerCase()];
+                }
+                try {
+                    const res = await fetch(`https://api.coinbase.com/v2/prices/${coin}-USD/spot`);
+                    const data = await res.json();
+                    if (data && data.data && data.data.amount) {
+                        const price = parseFloat(data.data.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                        await speak(`The price of ${coin} is currently ${price} U.S. dollars.`);
+                    } else throw new Error("API error");
+                } catch(e) {
+                    await speak(`I couldn't fetch the price of ${coin} right now.`);
+                }
+            }
+
+            // --- 22. DIRECT WIKIPEDIA ---
+            else if (/wikipedia/i.test(command)) {
+                const query = command.replace(/wikipedia/gi, '').replace(/(search|look up|for)/gi, '').trim();
+                if (query) {
+                    await speak(`Searching Wikipedia for ${query}.`);
+                    window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank');
+                } else {
+                    await speak("What would you like me to lookup on Wikipedia?");
+                }
+            }
+
+            // --- 23. TRANSLATOR ---
+            else if (/translate\s+(.+)\s+to\s+([a-zA-Z]+)/i.test(command)) {
+                const match = command.match(/translate\s+(.+)\s+to\s+([a-zA-Z]+)/i);
+                if (match) {
+                    const textToTranslate = match[1].trim();
+                    const targetLang = match[2].trim();
+                    await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
+                    window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
+                }
+            }
+
+            // --- 24. FALLBACK FEEDBACK OR GEMINI ENHANCEMENT ---
             else {
+                if (geminiApiKey) {
+                    await speak("Thinking...");
+                    const geminiResult = await callGemini(command);
+                    if (geminiResult) {
+                        await executeGeminiAction(geminiResult);
+                        isListeningState = false;
+                        return;
+                    }
+                }
+
                 const sorryResponses = [
                     "Sorry, I didn't understand.",
                     "Sorry, I didn't quite get that."
@@ -835,6 +1428,11 @@
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
+
+                // Stop interpreting voice inputs if settings menu is open
+                if (document.getElementById('settings-modal').style.display === 'flex') {
+                    return;
+                }
 
                 let finalTranscript = '';
                 let interimTranscript = '';
