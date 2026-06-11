@@ -381,7 +381,13 @@
             'camera': 'microsoft.windows.camera:',
             'maps': 'bingmaps:',
             'weather app': 'bingweather:',
-            'roblox': 'roblox://' // Direct Roblox App launcher
+            'roblox': 'roblox://',
+            'edge': 'microsoft-edge:',
+            'mail': 'mailto:',
+            'xbox': 'xbox:',
+            'photos': 'ms-photos:',
+            'onenote': 'onenote:',
+            'github desktop': 'x-github-client://'
         };
 
         const backupJokes = [
@@ -659,7 +665,7 @@ Available Actions:
 1. {"action": "speak", "param": "spoken text response"}
    Use this for answers to general questions, calculations, facts, jokes, text manipulation, passwords, unit conversions, coin flipping, dice rolling, translations, etc.
 2. {"action": "open_app", "app": "app_name", "speak": "the speech confirmation"}
-   Valid apps: steam, discord, vscode, spotify, epic games, calculator, clock, word, excel, powerpoint, whatsapp, telegram, zoom, slack, netflix, settings, paint, camera, maps, weather app, roblox.
+   Valid apps: steam, discord, vscode, spotify, epic games, calculator, clock, word, excel, powerpoint, whatsapp, telegram, zoom, slack, netflix, settings, paint, camera, maps, weather app, roblox, edge, mail, xbox, photos, onenote, github desktop.
 3. {"action": "open_web", "site": "site_name", "speak": "the speech confirmation"}
    Valid sites: youtube, twitter, instagram, github, reddit, tiktok. Or a generic URL starting with http/https.
 4. {"action": "google_search", "query": "search query", "speak": "the speech confirmation"}
@@ -1007,33 +1013,151 @@ Guidelines:
             }
 
             // --- 2. TIME (Strictly formatted to 12 hour cycle) ---
-            if (/time|current time|time is it|what's the time/i.test(command)) {
+            if (/(?:tell me the\s+)?time|current time|time is it|what's the time|what is the time/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                 await speak(`The time is currently ${time}.`);
             } 
 
             // --- 3. DATE ---
-            else if (/date|what day|today|day is it/i.test(command)) {
+            else if (/(?:what is the\s+)?date|what\s+day|today|day is it/i.test(command)) {
                 const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
                 await speak(`Today is ${date}.`);
             }
 
-            // --- 4. GOOGLE CALENDAR REMINDERS ---
-            else if (/remind|reminder|schedule|google calendar/i.test(command)) {
-                const match = command.match(/(?:remind me to|set a reminder to|set a reminder for) (.+)/i);
-                if (match) {
-                    const taskText = match[1].trim();
-                    await speak(`Opening Google Calendar to set a reminder to ${taskText}.`);
-                    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(taskText)}`;
-                    window.open(calendarUrl, '_blank');
-                } else {
-                    await speak("What would you like me to remind you about?");
-                    lastFollowUp = 'reminder_task';
-                    triggerFollowUpListening();
+            // --- 4. COIN FLIPPER ---
+            else if (/(?:flip|toss|spin|throw)\s+(?:a\s+)?coin/i.test(command)) {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                await speak(`I flipped a coin and it landed on ${result}.`);
+            }
+
+            // --- 5. DICE ROLLER ---
+            else if (/(?:roll|throw|toss|spin)\s+(?:a\s+)?(?:dice|die)/i.test(command)) {
+                const result = Math.floor(Math.random() * 6) + 1;
+                await speak(`I rolled a six-sided die and got a ${result}.`);
+            }
+
+            // --- 6. RANDOM NUMBER GENERATOR ---
+            else if (/(?:pick|choose|generate|roll|get|give me|random|select)\s+(?:a\s+)?number/i.test(command)) {
+                const rangeMatch = command.match(/between\s+(\d+)\s+and\s+(\d+)/i);
+                let min = 1, max = 100;
+                if (rangeMatch) {
+                    min = parseInt(rangeMatch[1]);
+                    max = parseInt(rangeMatch[2]);
+                }
+                const result = Math.floor(Math.random() * (max - min + 1)) + min;
+                await speak(`Your random number between ${min} and ${max} is ${result}.`);
+            }
+
+            // --- 7. SECURE PASSWORD GENERATOR (Saves persistent metadata to Browser localStorage) ---
+            else if (/(?:generate|make|create|get|give me|setup|new)\s+(?:a\s+)?(?:secure\s+)?password/i.test(command)) {
+                const lengthMatch = command.match(/length\s+(\d+)/i) || command.match(/(\d+)\s+characters/i);
+                let length = 12;
+                if (lengthMatch) {
+                    length = parseInt(lengthMatch[1]);
+                }
+                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+                let password = "";
+                for (let i = 0; i < length; i++) {
+                    password += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+
+                const newPassObj = {
+                    id: Date.now(),
+                    password: password,
+                    date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+                    name: 'Generated Password'
+                };
+
+                let existingPass = JSON.parse(localStorage.getItem('leo_saved_passwords') || '[]');
+                existingPass.unshift(newPassObj);
+                localStorage.setItem('leo_saved_passwords', JSON.stringify(existingPass));
+
+                await speak(`I've generated a secure ${length}-character password for you.`);
+                responseText.textContent = `Password: ${password}`;
+                responseText.classList.add('visible');
+                try {
+                    await navigator.clipboard.writeText(password);
+                } catch(e) {}
+            }
+
+            // --- 8. CRYPTO PRICING LOOKUP ---
+            else if (/(?:crypto|cryptocurrency|price of|how much is)\s+(bitcoin|ethereum|solana|doge|cardano|btc|eth|sol|ada)/i.test(command)) {
+                const coinMap = {
+                    'bitcoin': 'BTC', 'btc': 'BTC',
+                    'ethereum': 'ETH', 'eth': 'ETH',
+                    'solana': 'SOL', 'sol': 'SOL',
+                    'doge': 'DOGE', 'dogecoin': 'DOGE',
+                    'cardano': 'ADA', 'ada': 'ADA'
+                };
+                let coin = 'BTC';
+                const match = command.match(/(bitcoin|ethereum|solana|doge|cardano|btc|eth|sol|ada)/i);
+                if (match && coinMap[match[1].toLowerCase()]) {
+                    coin = coinMap[match[1].toLowerCase()];
+                }
+                try {
+                    const res = await fetch(`https://api.coinbase.com/v2/prices/${coin}-USD/spot`);
+                    const data = await res.json();
+                    if (data && data.data && data.data.amount) {
+                        const price = parseFloat(data.data.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                        await speak(`The price of ${coin} is currently ${price} U.S. dollars.`);
+                    } else throw new Error("API error");
+                } catch(e) {
+                    await speak(`I couldn't fetch the price of ${coin} right now.`);
                 }
             }
 
-            // --- 5. CASUAL TALK & GREETINGS (Phonetic Synonym Friendly) ---
+            // --- 9. UNIT CONVERTER ---
+            else if (/(?:convert|conversion|convert temperature|how many)\s+(.+)/i.test(command)) {
+                const match = command.match(/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i);
+                if (match) {
+                    const val = parseFloat(match[1]);
+                    const from = match[2].toLowerCase();
+                    const to = match[3].toLowerCase();
+                    let resVal = null;
+                    let unitStr = "";
+
+                    if (from === 'celsius' && to === 'fahrenheit') {
+                        resVal = (val * 9/5) + 32;
+                        unitStr = "Fahrenheit";
+                    } else if (from === 'fahrenheit' && to === 'celsius') {
+                        resVal = (val - 32) * 5/9;
+                        unitStr = "Celsius";
+                    }
+                    else if (from === 'kilograms' && to === 'pounds') {
+                        resVal = val * 2.20462;
+                        unitStr = "pounds";
+                    } else if (from === 'pounds' && to === 'kilograms') {
+                        resVal = val / 2.20462;
+                        unitStr = "kilograms";
+                    }
+                    else if (from === 'kilometers' && to === 'miles') {
+                        resVal = val * 0.621371;
+                        unitStr = "miles";
+                    } else if (from === 'miles' && to === 'kilometers') {
+                        resVal = val / 0.621371;
+                        unitStr = "kilometers";
+                    }
+
+                    if (resVal !== null) {
+                        await speak(`${val} ${from} is equivalent to ${resVal.toFixed(2)} ${unitStr}.`);
+                        isListeningState = false;
+                        return;
+                    }
+                }
+            }
+
+            // --- 10. TRANSLATOR (Positioned high to prevent standard greetings hijacking) ---
+            else if (/(?:translate|how do you say|how to say)\s+(.+)\s+(?:to|in)\s+([a-zA-Z]+)/i.test(command)) {
+                const match = command.match(/(?:translate|how do you say|how to say)\s+(.+)\s+(?:to|in)\s+([a-zA-Z]+)/i);
+                if (match) {
+                    const textToTranslate = match[1].trim();
+                    const targetLang = match[2].trim();
+                    await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
+                    window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
+                }
+            }
+
+            // --- 11. CASUAL TALK & GREETINGS (Stricter matching rules to keep translations safe) ---
             else if (/what can you do|features|help me/i.test(command)) {
                 await speak("I can open apps on your PC, draft emails, solve math equations, tell you the time, date, weather, and tell you jokes or facts.");
             }
@@ -1053,13 +1177,13 @@ Guidelines:
                 const matchedKey = Object.keys(casualResponses).find(key => command.includes(key));
                 await speak(casualResponses[matchedKey]);
             }
-            else if (/hello|gday|g'day|hi|hey|yo|howdy|whats up|sup|morning|afternoon|evening/i.test(command)) {
+            else if (/\b(?:hello|gday|g'day|hi|hey|yo|howdy|whats up|sup)\b/i.test(command)) {
                 const greetings = ["G'day!", "Hi! How can I help you today?", "Hello there!", "Yo! What's up?"];
                 await speak(greetings[Math.floor(Math.random() * greetings.length)]);
             }
 
-            // --- 6. JOKES & FACTS ---
-            else if (/joke|make me laugh|funny|comedy/i.test(command)) {
+            // --- 12. JOKES & FACTS ---
+            else if (/(?:tell me a\s+)?joke|make me laugh|funny|comedy/i.test(command)) {
                 try {
                     const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
                     const data = await res.json();
@@ -1068,7 +1192,7 @@ Guidelines:
                     await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
                 }
             }
-            else if (/fact|tell me a fact|interesting fact|something cool/i.test(command)) {
+            else if (/(?:tell me a\s+)?fact|tell me something interesting|something cool/i.test(command)) {
                 try {
                     const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
                     const data = await res.json();
@@ -1078,7 +1202,7 @@ Guidelines:
                 }
             }
 
-            // --- 7. YOUTUBE RANDOMIZER & PLAYBACK ---
+            // --- 13. YOUTUBE RANDOMIZER & PLAYBACK ---
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
@@ -1097,7 +1221,7 @@ Guidelines:
                 }
             }
 
-            // --- 8. SMARTER ROBLOX LAUNCHER (Intercepts Game and Platform synonyms) ---
+            // --- 14. SMARTER ROBLOX LAUNCHER (Intercepts Game and Platform synonyms) ---
             else if (
                 robloxGames.some(game => game.names.some(name => command.includes(name))) || 
                 /roblox|raw blocks|road blocks|row blocks|rowbox|rawbox|roadbox|raw box|road box|row box/i.test(command)
@@ -1178,9 +1302,10 @@ Guidelines:
                 }
             }
             
-            // --- 9. DICTIONARY DEFINITIONS ---
-            else if (/define|definition|meaning of/i.test(command)) {
-                const word = command.replace(/(define|what is the definition of|meaning of)/g, '').trim();
+            // --- 15. DICTIONARY DEFINITIONS ---
+            else if (/(?:define|definition of|meaning of)\s+(.+)/i.test(command)) {
+                const match = command.match(/(?:define|definition of|meaning of)\s+(.+)/i);
+                const word = match[1].trim();
                 try {
                     const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
                     const data = await res.json();
@@ -1192,14 +1317,15 @@ Guidelines:
                 }
             }
 
-            // --- 10. IMAGES & SPECIFIC SITES (Wikipedia redirected Search Engine) ---
+            // --- 16. IMAGES & SPECIFIC SITES (Wikipedia redirected Search Engine) ---
             else if (command.includes('images of') || command.includes('show pictures of')) {
                 const query = command.replace(/(show images of|images of|show pictures of|pictures of)/g, '').trim();
                 await speak(`Pulling up images of ${query}.`);
                 window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
             }
-            else if (command.startsWith('search') || command.includes('search for')) {
-                const query = command.replace(/(search for|search)/g, '').trim();
+            else if (/(?:search|look up|find|wikipedia|wikipedia search for)\s+(.+)/i.test(command)) {
+                const match = command.match(/(?:search|look up|find|wikipedia|wikipedia search for)\s+(.+)/i);
+                const query = match[1].trim();
                 if (query) {
                     await speak(`Searching Wikipedia for ${query}.`);
                     window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank');
@@ -1210,8 +1336,8 @@ Guidelines:
                 }
             }
             
-            // --- 11. WEATHER ---
-            else if (/weather|temperature|temp|forecast/i.test(command)) {
+            // --- 17. WEATHER ---
+            else if (/(?:what's the\s+)?weather|temperature|temp|forecast|how hot|how cold/i.test(command)) {
                 let city = "Melbourne"; 
                 const match = command.match(/weather in ([a-zA-Z\s]+)/);
                 if (match) city = match[1].trim();
@@ -1227,7 +1353,7 @@ Guidelines:
                 }
             } 
 
-            // --- 12. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK (Smarter Web Search Fallback) ---
+            // --- 18. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK (Smarter Web Search Fallback) ---
             else if (/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\b/i.test(command)) {
                 const query = command.replace(/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\s+/gi, '').trim();
                 try {
@@ -1261,7 +1387,7 @@ Guidelines:
                 }
             }
             
-            // --- 13. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
+            // --- 19. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
             else if (command.includes('open') || command.includes('launch')) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
@@ -1309,7 +1435,7 @@ Guidelines:
                 }
             }
 
-            // --- 14. EMAIL DRAFTING WITH FULL CONTENT ---
+            // --- 20. EMAIL DRAFTING WITH FULL CONTENT ---
             else if (/email|draft|mail|compose/i.test(command)) {
                 let recipient = "";
                 let subject = "New Draft";
@@ -1350,128 +1476,7 @@ Guidelines:
                 }
             }
 
-            // --- 15. SECURE PASSWORD GENERATOR (Saves persistent metadata to Browser localStorage) ---
-            else if (/generate a password|secure password|generate password/i.test(command)) {
-                const lengthMatch = command.match(/length\s+(\d+)/i) || command.match(/(\d+)\s+characters/i);
-                let length = 12;
-                if (lengthMatch) {
-                    length = parseInt(lengthMatch[1]);
-                }
-                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-                let password = "";
-                for (let i = 0; i < length; i++) {
-                    password += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-
-                const newPassObj = {
-                    id: Date.now(),
-                    password: password,
-                    date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-                    name: 'Generated Password'
-                };
-
-                let existingPass = JSON.parse(localStorage.getItem('leo_saved_passwords') || '[]');
-                existingPass.unshift(newPassObj);
-                localStorage.setItem('leo_saved_passwords', JSON.stringify(existingPass));
-
-                await speak(`I've generated a secure ${length}-character password for you.`);
-                responseText.textContent = `Password: ${password}`;
-                responseText.classList.add('visible');
-                try {
-                    await navigator.clipboard.writeText(password);
-                } catch(e) {}
-            }
-
-            // --- 16. UNIT CONVERTER ---
-            else if (/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i.test(command)) {
-                const match = command.match(/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i);
-                if (match) {
-                    const val = parseFloat(match[1]);
-                    const from = match[2].toLowerCase();
-                    const to = match[3].toLowerCase();
-                    let resVal = null;
-                    let unitStr = "";
-
-                    if (from === 'celsius' && to === 'fahrenheit') {
-                        resVal = (val * 9/5) + 32;
-                        unitStr = "Fahrenheit";
-                    } else if (from === 'fahrenheit' && to === 'celsius') {
-                        resVal = (val - 32) * 5/9;
-                        unitStr = "Celsius";
-                    }
-                    else if (from === 'kilograms' && to === 'pounds') {
-                        resVal = val * 2.20462;
-                        unitStr = "pounds";
-                    } else if (from === 'pounds' && to === 'kilograms') {
-                        resVal = val / 2.20462;
-                        unitStr = "kilograms";
-                    }
-                    else if (from === 'kilometers' && to === 'miles') {
-                        resVal = val * 0.621371;
-                        unitStr = "miles";
-                    } else if (from === 'miles' && to === 'kilometers') {
-                        resVal = val / 0.621371;
-                        unitStr = "kilometers";
-                    }
-
-                    if (resVal !== null) {
-                        await speak(`${val} ${from} is equivalent to ${resVal.toFixed(2)} ${unitStr}.`);
-                    } else {
-                        await speak(`I don't support converting ${from} to ${to} natively yet.`);
-                    }
-                }
-            }
-
-            // --- 17. CRYPTO PRICING LOOKUP ---
-            else if (/crypto|price of (bitcoin|ethereum|solana|doge|cardano)/i.test(command)) {
-                const coinMap = {
-                    'bitcoin': 'BTC',
-                    'ethereum': 'ETH',
-                    'solana': 'SOL',
-                    'doge': 'DOGE',
-                    'dogecoin': 'DOGE',
-                    'cardano': 'ADA'
-                };
-                let coin = 'BTC';
-                const match = command.match(/price of ([a-zA-Z]+)/i);
-                if (match && coinMap[match[1].toLowerCase()]) {
-                    coin = coinMap[match[1].toLowerCase()];
-                }
-                try {
-                    const res = await fetch(`https://api.coinbase.com/v2/prices/${coin}-USD/spot`);
-                    const data = await res.json();
-                    if (data && data.data && data.data.amount) {
-                        const price = parseFloat(data.data.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-                        await speak(`The price of ${coin} is currently ${price} U.S. dollars.`);
-                    } else throw new Error("API error");
-                } catch(e) {
-                    await speak(`I couldn't fetch the price of ${coin} right now.`);
-                }
-            }
-
-            // --- 18. DIRECT WIKIPEDIA ---
-            else if (/wikipedia/i.test(command)) {
-                const query = command.replace(/wikipedia/gi, '').replace(/(search|look up|for)/gi, '').trim();
-                if (query) {
-                    await speak(`Searching Wikipedia for ${query}.`);
-                    window.open(`https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, '_blank');
-                } else {
-                    await speak("What would you like me to lookup on Wikipedia?");
-                }
-            }
-
-            // --- 19. TRANSLATOR ---
-            else if (/translate\s+(.+)\s+to\s+([a-zA-Z]+)/i.test(command)) {
-                const match = command.match(/translate\s+(.+)\s+to\s+([a-zA-Z]+)/i);
-                if (match) {
-                    const textToTranslate = match[1].trim();
-                    const targetLang = match[2].trim();
-                    await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
-                    window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
-                }
-            }
-
-            // --- 20. FALLBACK FEEDBACK OR GEMINI ENHANCEMENT ---
+            // --- 21. FALLBACK FEEDBACK OR GEMINI ENHANCEMENT ---
             else {
                 if (geminiApiKey) {
                     await speak("Thinking...");
@@ -1615,6 +1620,32 @@ Guidelines:
             }, 1500);
 
             restartRecognition();
+        }
+
+        // --- KEYBOARD HUB INTEGRATION ---
+        window.addEventListener('keydown', (e) => {
+            const isInputFocused = document.activeElement && 
+                                  (document.activeElement.tagName === 'INPUT' || 
+                                   document.activeElement.tagName === 'TEXTAREA' ||
+                                   document.activeElement.isContentEditable);
+            
+            // Press SPACE BAR to toggle overlay menu, except when typing inside an input field
+            if (e.code === 'Space' && !isInputFocused) {
+                e.preventDefault(); // Stop standard window scrolling down
+                toggleHub();
+            }
+            if (e.key === 'Escape') {
+                closeSettings();
+            }
+        });
+
+        function toggleHub() {
+            const modal = document.getElementById('settings-modal');
+            if (modal.style.display === 'flex') {
+                closeSettings();
+            } else {
+                openSettings();
+            }
         }
 
         // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
