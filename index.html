@@ -76,28 +76,26 @@
             box-sizing: border-box;
         }
 
+        /* Original, sleek tab styling */
         .hub-tab {
             font-size: 1rem;
             color: rgba(255, 255, 255, 0.35);
             cursor: pointer;
-            padding: 12px 24px; /* Increased hitboxes */
-            transition: color 0.2s, border-bottom 0.2s, background-color 0.2s;
+            padding: 8px 20px;
+            transition: color 0.2s, border-bottom 0.2s;
             border-bottom: 2px solid transparent;
             font-weight: 400;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            border-radius: 8px;
         }
         
-        .hub-tab:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background-color: rgba(255, 255, 255, 0.03); /* Subtle tab spacing highlighting */
-        }
-
         .hub-tab.active {
             color: #ffffff;
             border-bottom: 2px solid #ffffff;
-            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .hub-tab:hover {
+            color: rgba(255, 255, 255, 0.8);
         }
 
         /* Sleek scrollbars for lists */
@@ -172,11 +170,11 @@
             <!-- Panel: Configuration Settings -->
             <div id="panel-settings" style="width: 100%; display: none; text-align: left; box-sizing: border-box;">
                 <div style="margin-bottom: 25px; width: 100%;">
-                    <label for="api-key-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Gemini API Key</label>
+                    <label for="api-key-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">OpenRouter API Key</label>
                     <!-- Key-masking styling used to bypass 1Password and Chrome Autofill traps -->
-                    <input type="text" id="api-key-input" placeholder="Paste your Gemini API key here..." autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s; -webkit-text-security: disc; text-security: disc;" />
+                    <input type="text" id="api-key-input" placeholder="Paste your API key here..." autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s; -webkit-text-security: disc; text-security: disc;" />
                     <div style="font-size: 0.8rem; color: #555; margin-top: 10px; line-height: 1.5;">
-                        Leo uses <strong>gemini-3.1-flash-lite</strong> for multi-turn conversational persistence and local action control.
+                        Leo uses <strong>google/gemma-4-31b-it:free</strong> via OpenRouter for multi-turn conversational persistence and local action control.
                     </div>
                 </div>
                 <button id="close-settings" style="width: 100%; padding: 14px; background: #ffffff; color: #000000; border: none; border-radius: 10px; font-size: 1rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: opacity 0.2s;">Save & Close Menu</button>
@@ -277,8 +275,8 @@
                 // Keep record of conversation context
                 if (text && text !== "Thinking..." && text !== "Cancelled.") {
                     const lastMsg = conversationHistory[conversationHistory.length - 1];
-                    if (!lastMsg || lastMsg.text !== text || lastMsg.role !== 'model') {
-                        conversationHistory.push({ role: 'model', text: text });
+                    if (!lastMsg || lastMsg.text !== text || lastMsg.role !== 'assistant') {
+                        conversationHistory.push({ role: 'assistant', text: text });
                     }
                 }
 
@@ -773,7 +771,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                         <span style="font-family: monospace; font-size: 1.05rem; color: #fff; user-select: all; letter-spacing: 0.05em;">${escapeHtml(item.password)}</span>
                         <div style="display: flex; gap: 15px;">
-                            <button onclick="copyToClipboard(this, '${escapeJS(item.password)}')" style="background: transparent; border: none; color: #888; font-size: 0.8rem; cursor: pointer; padding: 0; transition: color 0.2s;">Copy</button>
+                            <button data-password="${escapeHtml(item.password)}" onclick="copyToClipboard(this)" style="background: transparent; border: none; color: #888; font-size: 0.8rem; cursor: pointer; padding: 0; transition: color 0.2s;">Copy</button>
                             <button onclick="deleteSavedPassword(${item.id})" style="background: transparent; border: none; color: #ff5555; font-size: 0.8rem; cursor: pointer; padding: 0;">Delete</button>
                         </div>
                     </div>
@@ -798,20 +796,23 @@
             renderPasswordsList();
         }
 
-        // Sleek selection copier with button feedback
-        async function copyToClipboard(button, text) {
+        // Highly reliable clipboard fallback
+        async function copyToClipboard(button) {
+            const text = button.getAttribute('data-password');
             try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
+                if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(text);
                 } else {
-                    const textArea = document.createElement("textarea");
+                    let textArea = document.createElement("textarea");
                     textArea.value = text;
                     textArea.style.position = "fixed";
+                    textArea.style.left = "-999999px";
+                    textArea.style.top = "-999999px";
                     document.body.appendChild(textArea);
                     textArea.focus();
                     textArea.select();
                     document.execCommand('copy');
-                    document.body.removeChild(textArea);
+                    textArea.remove();
                 }
                 const originalText = button.textContent;
                 button.textContent = "Copied!";
@@ -906,12 +907,12 @@
         }
 
 
-        // --- GEMINI 3.1 FLASH-LITE API CLIENT (Remote Reasoner) ---
+        // --- GEMINI/OPENROUTER API CLIENT (Remote Reasoner) ---
         async function callGemini(userPrompt) {
             if (!geminiApiKey) return null;
 
-            // System instructions detailing PC operations tools for Gemini fallback execution
-            const systemPrompt = `You are Gemini, acting as the advanced reasoning core for the Leo Desktop Assistant.
+            // System instructions detailing PC operations tools for fallback execution
+            const systemPrompt = `You are an advanced reasoning core for the Leo Desktop Assistant.
 Your task is to analyze the user's input and choose the correct tool/action to perform on their PC.
 
 AVAILABLE TOOLS & JSON SCHEMAS:
@@ -936,65 +937,60 @@ AVAILABLE TOOLS & JSON SCHEMAS:
 9. {"action": "roblox_launch", "game": "roblox game name", "speak": "spoken confirmation"}
    Launches experiences directly inside the Roblox app.
 
-CRITICAL INSTRUCTIONS:
-- You must respond ONLY with a raw JSON object matching one of the schemas above. 
-- Do NOT wrap the JSON response in markdown code blocks (e.g., do not use \`\`\`json).
-- Keep spoken text natural, brief, and designed for speech synthesis.`;
+CRITICAL: OUTPUT ONLY VALID JSON. NO MARKDOWN. NO BACKTICKS. NO EXPLANATION. Just the raw JSON object. Keep spoken text natural, brief, and designed for speech synthesis.`;
 
-            // Transform conversation history array to Gemini SDK messages block format
-            const contents = [];
+            // Map history to standard OpenAI/OpenRouter chat format
+            const messages = [
+                { role: "system", content: systemPrompt }
+            ];
+            
             conversationHistory.forEach(item => {
-                contents.push({
-                    role: item.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: item.text }]
+                messages.push({
+                    role: item.role === 'user' ? 'user' : 'assistant',
+                    content: item.text
                 });
             });
 
-            if (contents.length === 0) {
-                contents.push({
-                    role: 'user',
-                    parts: [{ text: userPrompt }]
-                });
+            if (conversationHistory.length === 0 || conversationHistory[conversationHistory.length - 1].role !== 'user') {
+                messages.push({ role: "user", content: userPrompt });
             }
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
+            const endpoint = `https://openrouter.ai/api/v1/chat/completions`;
 
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Bearer ${geminiApiKey}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        contents: contents,
-                        systemInstruction: {
-                            parts: [{ text: systemPrompt }]
-                        },
-                        generationConfig: {
-                            responseMimeType: "application/json"
-                        }
+                        model: "google/gemma-4-31b-it:free",
+                        messages: messages
                     })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Gemini API Error: ${response.status}`);
+                    throw new Error(`API Error: ${response.status}`);
                 }
 
                 const data = await response.json();
-                const jsonText = data.candidates[0].content.parts[0].text.trim();
+                let jsonText = data.choices[0].message.content.trim();
                 
-                let cleanedJson = jsonText;
-                if (cleanedJson.startsWith("```json")) {
-                    cleanedJson = cleanedJson.replace(/^```json/, "");
+                if (jsonText.startsWith("```json")) {
+                    jsonText = jsonText.replace(/^```json/, "");
                 }
-                if (cleanedJson.endsWith("```")) {
-                    cleanedJson = cleanedJson.slice(0, -3);
+                if (jsonText.startsWith("```")) {
+                    jsonText = jsonText.replace(/^```/, "");
                 }
-                cleanedJson = cleanedJson.trim();
+                if (jsonText.endsWith("```")) {
+                    jsonText = jsonText.replace(/```$/, "");
+                }
+                jsonText = jsonText.trim();
 
-                return JSON.parse(cleanedJson);
+                return JSON.parse(jsonText);
             } catch (e) {
-                console.error("Gemini invocation failed:", e);
+                console.error("API invocation failed:", e);
                 return null;
             }
         }
@@ -1257,7 +1253,7 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 1. LOCAL REMINDERS PARSER ---
-            if (/\b(?:remind|reminder|reminders|schedule)\b/i.test(command)) {
+            if (/\b(?:remind|reminder|reminders|schedule|alert me|set a timer)\b/i.test(command)) {
                 const parsed = parseReminderCommand(command);
                 const descInput = parsed.task;
                 if (descInput && descInput !== "Generic Reminder") {
@@ -1279,7 +1275,7 @@ CRITICAL INSTRUCTIONS:
                 }
             }
 
-            // --- 2. TRANSLATOR (Stricter layout checks) ---
+            // --- 2. TRANSLATOR ---
             else if (/\b(?:translate|translation|how to say|how do you say)\b/i.test(command) || /\bin\s+(?:spanish|french|german|italian|japanese|chinese|mandarin|russian|portuguese|arabic|hindi)\b/i.test(command)) {
                 const match = command.match(/(?:translate|how do you say|how to say)\s+(.+)\s+(?:to|in)\s+([a-zA-Z]+)/i);
                 if (match) {
@@ -1288,7 +1284,6 @@ CRITICAL INSTRUCTIONS:
                     await speak(`Opening Google Translate for ${textToTranslate} to ${targetLang}.`);
                     window.open(`https://translate.google.com/?sl=auto&tl=${encodeURIComponent(targetLang)}&text=${encodeURIComponent(textToTranslate)}&op=translate`, '_blank');
                 } else {
-                    // Simple translate fallback structure
                     const simpleMatch = command.match(/translate\s+(.+)/i);
                     if (simpleMatch) {
                         const query = simpleMatch[1].trim();
@@ -1315,8 +1310,8 @@ CRITICAL INSTRUCTIONS:
                 } catch(e) {}
             }
 
-            // --- 4. SECURE PASSWORD GENERATOR (Permissive matching block captured early) ---
-            else if (/\b(?:password|passwords|passcode|pass code)\b/i.test(command)) {
+            // --- 4. SECURE PASSWORD GENERATOR ---
+            else if (/\b(?:generate.*password|make.*password|create.*password|new.*password|get.*password|password.*generate|passcode|pass phrase|pass word)\b/i.test(command)) {
                 const lengthMatch = command.match(/\b(?:length|size|of)\s+(\d+)\b/i) || command.match(/\b(\d+)\s*(?:characters|chars|digits)\b/i);
                 let length = 12;
                 if (lengthMatch) {
@@ -1348,19 +1343,19 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 5. COIN FLIPPER ---
-            else if (/\b(?:coin|flip|toss|heads or tails)\b/i.test(command)) {
+            else if (/\b(?:flip.*coin|toss.*coin|coin.*flip|heads or tails)\b/i.test(command)) {
                 const result = Math.random() < 0.5 ? 'heads' : 'tails';
                 await speak(`I flipped a coin and it landed on ${result}.`);
             }
 
             // --- 6. DICE ROLLER ---
-            else if (/\b(?:dice|die|roll a die|roll dice)\b/i.test(command)) {
+            else if (/\b(?:roll.*dice|roll.*die|throw.*dice|throw.*die|dice|die)\b/i.test(command)) {
                 const result = Math.floor(Math.random() * 6) + 1;
                 await speak(`I rolled a six-sided die and got a ${result}.`);
             }
 
             // --- 7. RANDOM NUMBER GENERATOR ---
-            else if (/\b(?:number)\b/i.test(command) && /\b(?:random|pick|choose|generate|select|roll)\b/i.test(command)) {
+            else if (/\b(?:random.*number|pick.*number|choose.*number|generate.*number|give.*number|number)\b/i.test(command) && /\b(?:random|pick|choose|generate|select|roll)\b/i.test(command)) {
                 const rangeMatch = command.match(/(?:between|from)\s+(\d+)\s+(?:to|and)\s+(\d+)/i) || command.match(/(\d+)\s*(?:to|and)\s*(\d+)/i);
                 let min = 1, max = 100;
                 if (rangeMatch) {
@@ -1377,7 +1372,7 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 8. CRYPTO PRICING LOOKUP ---
-            else if (/\b(?:bitcoin|ethereum|solana|doge|dogecoin|cardano|crypto|btc|eth|sol|ada)\b/i.test(command)) {
+            else if (/\b(?:price of|value of|crypto.*price|rate of|market of|how much is)\b/i.test(command) && /\b(?:bitcoin|btc|ethereum|eth|solana|sol|doge|dogecoin|cardano|ada)\b/i.test(command)) {
                 const coinMap = {
                     'bitcoin': 'BTC', 'btc': 'BTC',
                     'ethereum': 'ETH', 'eth': 'ETH',
@@ -1403,8 +1398,8 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 9. UNIT CONVERTER ---
-            else if (/\b(?:convert|conversion|celsius|fahrenheit|kilograms|pounds|kilometers|miles)\b/i.test(command)) {
-                const match = command.match(/convert\s+(\d+)\s+([a-zA-Z]+)\s+to\s+([a-zA-Z]+)/i);
+            else if (/\b(?:convert|conversion)\b/i.test(command)) {
+                const match = command.match(/convert\s+(\d+(?:\.\d+)?)\s+([a-zA-Z]+)\s+(?:to|into|in)\s+([a-zA-Z]+)/i);
                 if (match) {
                     const val = parseFloat(match[1]);
                     const from = match[2].toLowerCase();
@@ -1443,9 +1438,9 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 10. WEATHER ---
-            else if (/\b(?:weather|temperature|temp|forecast|raining|rain|hot|cold)\b/i.test(command)) {
+            else if (/\b(?:weather|temperature|temp|forecast|how hot|how cold|is it raining|raining|rain|sunny|sun)\b/i.test(command)) {
                 let city = "Melbourne"; 
-                const cityMatch = command.match(/\b(?:weather|temp|temperature|forecast|raining|rain)\s+(?:in|for|at)\s+([a-zA-Z\s]+)/i) || command.match(/\b(?:in|for|at)\s+([a-zA-Z\s]+)/i);
+                const cityMatch = command.match(/\b(?:weather|temp|temperature|forecast|raining|rain|sunny)\s+(?:in|for|at)\s+([a-zA-Z\s]+)/i) || command.match(/\b(?:in|for|at)\s+([a-zA-Z\s]+)/i);
                 if (cityMatch) {
                     city = cityMatch[1].replace(/\b(today|tomorrow|now|this\s+week)\b/gi, '').trim();
                 }
@@ -1462,20 +1457,20 @@ CRITICAL INSTRUCTIONS:
             } 
 
             // --- 11. TIME (Strictly formatted to 12 hour cycle) ---
-            else if (/\b(?:time|clock|hour|hours)\b/i.test(command)) {
+            else if (/\b(?:time|clock|hour\b|what is the time|tell me the time|current time|do you know the time)\b/i.test(command)) {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                 await speak(`The time is currently ${time}.`);
             } 
 
             // --- 12. DATE ---
-            else if (/\b(?:date|day|today|tomorrow)\b/i.test(command)) {
+            else if (/\b(?:date|day is it|what day|today's date|current date|tell me the date|today|tomorrow)\b/i.test(command)) {
                 const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
                 await speak(`Today is ${date}.`);
             }
 
             // --- 13. JOKES & FACTS ---
-            else if (/\b(?:joke|jokes|funny|laugh|comedy|fact|facts|interesting)\b/i.test(command)) {
-                if (command.includes('joke') || command.includes('laugh') || command.includes('funny') || command.includes('comedy')) {
+            else if (/\b(?:joke|jokes|funny|laugh|comedy|humor|fact|facts|interesting|tell me something)\b/i.test(command)) {
+                if (command.includes('joke') || command.includes('laugh') || command.includes('funny') || command.includes('comedy') || command.includes('humor')) {
                     try {
                         const res = await fetch('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single');
                         const data = await res.json();
@@ -1495,10 +1490,10 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 14. DICTIONARY DEFINITIONS ---
-            else if (/\b(?:define|definition|meaning)\b/i.test(command)) {
-                const match = command.match(/(?:define|definition of|meaning of)\s+(.+)/i) || command.match(/(?:define|definition|meaning)\s+(.+)/i);
+            else if (/\b(?:define|definition|meaning of|what does\s+.*\s+mean)\b/i.test(command)) {
+                const match = command.match(/(?:define|definition of|meaning of)\s+(.+)/i) || command.match(/(?:define|definition|meaning of)\s+(.+)/i);
                 if (match) {
-                    const word = match[1].trim();
+                    const word = match[1].replace(/mean$/i, '').trim();
                     try {
                         const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
                         const data = await res.json();
@@ -1512,8 +1507,8 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 15. WIKIPEDIA / GENERAL SEARCH INTERCEPTS ---
-            else if (/\b(?:search|wikipedia|lookup|look up|find)\b/i.test(command)) {
-                const match = command.match(/(?:search|look up|find|wikipedia|wikipedia search for)\s+(.+)/i) || command.match(/(?:search|wikipedia|lookup|find)\s+(.+)/i);
+            else if (/\b(?:search|wikipedia|lookup|look up|find|who is|what is|tell me about)\b/i.test(command)) {
+                const match = command.match(/(?:search|look up|find|wikipedia|wikipedia search for|who is|what is|tell me about)\s+(.+)/i) || command.match(/(?:search|wikipedia|lookup|find)\s+(.+)/i);
                 if (match) {
                     const query = match[1].trim();
                     await speak(`Searching Wikipedia for ${query}.`);
@@ -1526,15 +1521,15 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 16. YOUTUBE RANDOMIZER & PLAYBACK ---
-            else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
+            else if (command.includes('random youtube video') || command.includes('random video on youtube') || /\b(?:random video)\b/i.test(command)) {
                 await speak("Picking a fun random video for you!");
                 const randomTopics = ["epic fails", "satisfying compilation", "mind blowing science", "funny animal moments", "best magic tricks"];
                 const rq = randomTopics[Math.floor(Math.random() * randomTopics.length)];
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(rq)}`, '_blank');
             }
-            else if (command.startsWith('play') && command.includes('on youtube')) {
-                const query = command.replace('play', '').replace('on youtube', '').trim();
-                if (query) {
+            else if (/\b(?:youtube|play\s+.*on youtube)\b/i.test(command)) {
+                const query = command.replace(/play/i, '').replace(/on youtube/i, '').trim();
+                if (query && query !== "youtube") {
                     await speak(`Playing ${query} on YouTube.`);
                     window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
                 } else {
@@ -1552,14 +1547,11 @@ CRITICAL INSTRUCTIONS:
                 const robloxKeywords = ['roblox', 'raw blocks', 'road blocks', 'row blocks', 'rowbox', 'rawbox', 'roadbox', 'raw box', 'road box', 'row box'];
                 let isRobloxRequest = robloxKeywords.some(keyword => command.includes(keyword));
                 
-                // Extract game name query by cleaning platform specifications and action verbs
                 let gameQuery = command;
-                
                 robloxKeywords.forEach(kw => {
                     const regex = new RegExp(`\\s*(?:in|on|at)?\\s*${kw}\\s*`, 'gi');
                     gameQuery = gameQuery.replace(regex, ' ');
                 });
-                
                 gameQuery = gameQuery.replace(/^(open|launch|play|start|run|go to)\s+/gi, '').trim();
                 gameQuery = gameQuery.replace(/\s+/g, ' ').trim();
 
@@ -1588,7 +1580,6 @@ CRITICAL INSTRUCTIONS:
                         isListeningState = false;
                         return;
                     } else {
-                        // Fallback: Query Rolimons Catalog Database
                         try {
                             const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
                             const rolimonsData = await rolimonsRes.json();
@@ -1617,7 +1608,6 @@ CRITICAL INSTRUCTIONS:
                         }
                     }
                 } else if (isRobloxRequest && gameQuery.length === 0) {
-                    // Direct main application launcher call
                     await speak("Opening Roblox.");
                     window.location.href = "roblox://";
                     isListeningState = false;
@@ -1626,12 +1616,11 @@ CRITICAL INSTRUCTIONS:
             }
             
             // --- 18. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
-            else if (command.includes('open') || command.includes('launch') || command.includes('go to')) {
+            else if (/\b(?:open|launch|start|run|go to)\b/i.test(command)) {
                 let appFound = false;
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
                     if (command.includes(appName)) {
                         appFound = true;
-                        // Speak FIRST, then redirect window location (prevents browsers from blocking UI threads)
                         await speak(`Opening ${appName}.`);
                         window.location.href = protocol;
                         break;
@@ -1658,7 +1647,6 @@ CRITICAL INSTRUCTIONS:
                     }
 
                     if (!webOpened) {
-                        // Let Gemini process opening requests when Leo does not understand natively
                         if (geminiApiKey) {
                             await speak("Thinking...");
                             const geminiResult = await callGemini(command);
@@ -1674,12 +1662,11 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 19. EMAIL DRAFTING WITH FULL CONTENT ---
-            else if (/email|draft|mail|compose/i.test(command)) {
+            else if (/\b(?:email|draft|mail|compose|send an email)\b/i.test(command)) {
                 let recipient = "";
                 let subject = "New Draft";
                 let body = "Hello there,\n\n";
 
-                // Extract: "email to [recipient] about [subject] saying [body]"
                 const emailRegex = /(?:draft an email|email|draft a mail) to\s+([a-zA-Z0-9@\.\s]+?)\s+(?:about|subject)\s+(.+?)\s+(?:saying|body|with)\s+(.+)/i;
                 const match = command.match(emailRegex);
 
@@ -1696,7 +1683,6 @@ CRITICAL INSTRUCTIONS:
                     await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
                     window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
                 } else {
-                    // Check if they named a recipient like "email to Mum"
                     const toMatch = command.match(/to\s+([a-zA-Z0-9@\.\s]+)/i);
                     if (toMatch) {
                         recipient = toMatch[1].split(' ')[0].trim();
@@ -1705,7 +1691,6 @@ CRITICAL INSTRUCTIONS:
                         lastFollowUp = 'email_subject';
                         triggerFollowUpListening();
                     } else {
-                        // Launch full conversational sequence
                         await speak("Who is the recipient of the email?");
                         lastFollowUp = 'email_recipient';
                         currentEmailDraft = { recipient: '', subject: '', body: '' };
@@ -1714,7 +1699,7 @@ CRITICAL INSTRUCTIONS:
                 }
             }
 
-            // --- 20. COUPLING DISCONNECT FALLBACK (Gemini Remote Reasoner) ---
+            // --- 20. COUPLING DISCONNECT FALLBACK (Remote API Reasoner) ---
             else {
                 if (geminiApiKey) {
                     await speak("Thinking...");
@@ -1741,7 +1726,7 @@ CRITICAL INSTRUCTIONS:
         let recognition;
 
         function restartRecognition() {
-            if (isSpeaking) return; // Don't interrupt spoken feedback
+            if (isSpeaking) return; 
             try {
                 recognition.start();
             } catch (e) {
@@ -1757,7 +1742,7 @@ CRITICAL INSTRUCTIONS:
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Set to false for high reliability/responsiveness
+            recognition.continuous = false; 
             recognition.interimResults = true; 
             recognition.lang = 'en-AU'; 
 
@@ -1768,7 +1753,6 @@ CRITICAL INSTRUCTIONS:
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
 
-                // Stop interpreting voice inputs if settings menu is open
                 if (document.getElementById('settings-modal').style.display === 'flex') {
                     return;
                 }
@@ -1783,19 +1767,16 @@ CRITICAL INSTRUCTIONS:
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
-                // Explicit direct wake words for high sensitivity
                 const directWakeWords = [
                     'hey leo', 'ok leo', 'okay leo', 'hi leo', 'hello leo', 'g\'day leo', 'gday leo', 'yo leo',
                     'hey lio', 'ok lio', 'okay lio', 'hey leeo', 'ok leeo', 'hey cleo', 'ok cleo', 'hey neo', 'ok neo',
-                    'hey halo', 'ok halo', 'okay halo', 'wake up leo', 'yo leo'
+                    'hey halo', 'ok halo', 'okay halo', 'wake up leo'
                 ];
                 
                 const containsDirectWake = directWakeWords.some(phrase => currentText.includes(phrase));
 
-                // Advanced phonetic wake word list targeting "Leo" mishearings (High sensitivity fallback)
                 const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day|ok|okay|play|say|day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|lake|leg|link|learn|look|loop|blue|glow|flow|line|light|list|left|lit|little|live|love|level|lion|liar|lear|learnt|clear|there|dear|darling|level|file|style|while|dial|mile|smile)|^(leo|lio|leeo|lear|g'day|gday|clear)$/i;
 
-                // WAKE WORD HEARD
                 if ((containsDirectWake || wakeWordRegex.test(currentText)) && !isListeningState) {
                     isListeningState = true;
                     activationSound.currentTime = 0;
@@ -1808,11 +1789,9 @@ CRITICAL INSTRUCTIONS:
                     }, 8000); 
                 }
 
-                // PROCESS FINISHED SENTENCE
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
                     
-                    // Remove direct wake words first to avoid command contamination
                     for (const phrase of directWakeWords) {
                         if (commandText.includes(phrase)) {
                             commandText = commandText.replace(phrase, '').trim();
@@ -1823,16 +1802,13 @@ CRITICAL INSTRUCTIONS:
                         commandText = commandText.replace(wakeWordRegex, '').trim();
                     }
 
-                    // Clean up potential leading/trailing punctuation or particles
                     commandText = commandText.replace(/^[,.\s?]+|[,.\s?]+$/g, '').trim();
 
                     if (isListeningState) {
-                        // Filter out short background noises
                         if (commandText.length > 2 && !['uh', 'um', 'ah'].includes(commandText)) {
                             isListeningState = false;
                             clearTimeout(idleTimeout);
                             
-                            // 0.4s Delay so it doesn't cut you off mid-breath
                             setTimeout(() => {
                                 processCommand(commandText);
                             }, 400);
@@ -1843,13 +1819,11 @@ CRITICAL INSTRUCTIONS:
 
             recognition.onend = () => {
                 recognitionActive = false;
-                // Auto-restart immediately to simulate continuous capturing without Chromium freezes
                 if (!isSpeaking) {
                     restartRecognition();
                 }
             };
 
-            // Watchdog Keep-Alive Loop: Resolves flakiness/stalls by forcing restart every 1.5s if silently closed
             setInterval(() => {
                 if (!recognitionActive && !isSpeaking && micPermissionGranted) {
                     console.log("Watchdog Keep-Alive: Waking Speech Recognition up.");
@@ -1860,16 +1834,14 @@ CRITICAL INSTRUCTIONS:
             restartRecognition();
         }
 
-        // --- KEYBOARD HUB INTEGRATION ---
         window.addEventListener('keydown', (e) => {
             const isInputFocused = document.activeElement && 
                                   (document.activeElement.tagName === 'INPUT' || 
                                    document.activeElement.tagName === 'TEXTAREA' ||
                                    document.activeElement.isContentEditable);
             
-            // Press SPACE BAR to toggle overlay menu, except when typing inside an input field
             if (e.code === 'Space' && !isInputFocused) {
-                e.preventDefault(); // Stop standard window scrolling down
+                e.preventDefault(); 
                 toggleHub();
             }
             if (e.key === 'Escape') {
@@ -1886,10 +1858,8 @@ CRITICAL INSTRUCTIONS:
             }
         }
 
-        // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Request mic permission to trigger browser authorization, then immediately release lock
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
                 micPermissionGranted = true;
