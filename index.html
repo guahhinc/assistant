@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guahh Assistant</title>
+    <title>Leo Assistant</title>
     
     <!-- Include Inter Tight Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,6 +25,7 @@
             height: 100vh;
             overflow: hidden;
             font-family: 'Inter Tight', sans-serif;
+            font-weight: 300; /* Set body default to thin */
             color: white;
         }
 
@@ -37,7 +38,7 @@
             position: absolute;
             bottom: 20vh;
             font-size: 1.5rem;
-            font-weight: 400;
+            font-weight: 300; /* Thin font styling */
             text-align: center;
             max-width: 700px;
             line-height: 1.5;
@@ -101,7 +102,7 @@
         function getBestVoice() {
             if (availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
             
-            // 1. Prioritise premium Australian English Online "Natural" voices
+            // 1. Prioritise premium Australian English Online "Natural" voices (Your perfect voice profile)
             let auVoice = availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Natural')) || 
                           availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Online')) ||
                           availableVoices.find(v => v.lang === 'en-AU' && v.name.includes('Google')) ||
@@ -131,7 +132,7 @@
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.voice = getBestVoice();
                 utterance.pitch = 1.0;
-                utterance.rate = 1.0; // Perfect pace for natural neural voices
+                utterance.rate = 1.0; 
 
                 // Failsafe timeout to prevent Chrome TTS engine locks
                 const speakTimeout = setTimeout(() => {
@@ -249,7 +250,7 @@
             'who made you': "I was created by the team at Guahh Inc.",
             'meaning of life': "According to a very famous book, the answer is forty-two. But I think it's about being helpful!",
             'tell me a secret': "If you say 'Nevermind', I will instantly stop whatever I'm doing. But keep that between us!",
-            'are you a robot': "I am an artificial intelligence assistant, but I prefer to think of myself as a digital friend."
+            'are you a robot': "I am an artificial intelligence assistant, but I prefer to think of myself as Leo, your digital friend."
         };
 
         // --- BRAIN & COMMAND LOGIC ---
@@ -343,27 +344,30 @@
                 window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
             }
 
-            // --- 9. ROBLOX (Scraper Logic via Rolimons & Proxy Fallback) ---
+            // --- 9. ROBLOX (Hardcoded IDs + Scraper Proxy Fallback) ---
             else if (command.includes('in roblox')) {
                 const match = command.match(/open (.+) in roblox/i);
                 if (match) {
-                    const gameName = match[1].trim();
+                    const gameName = match[1].trim().toLowerCase();
                     await speak(`Searching Roblox for ${gameName}...`);
                     try {
-                        // Priority 1: Rolimons direct API (Fast, completely CORS-free, covers all popular experiences)
-                        const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
-                        const rolimonsData = await rolimonsRes.json();
+                        // Core Hardcoded Game ID Map to bypass name/emoji changes
+                        const hardcodedRoblox = {
+                            'adopt me': '920587237',
+                            'piggy': '4623386862',
+                            'grow a garden': '126884695634066',
+                            'ant war': '11157166793'
+                        };
+
                         let foundPlaceId = null;
                         let actualName = "";
 
-                        if (rolimonsData && rolimonsData.success && rolimonsData.games) {
-                            for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
-                                const gameTitle = gameInfo[0].toLowerCase();
-                                if (gameTitle.includes(gameName.toLowerCase()) || gameName.toLowerCase().includes(gameTitle)) {
-                                    foundPlaceId = placeId;
-                                    actualName = gameInfo[0];
-                                    break;
-                                }
+                        // Step A: Check hardcoded games first
+                        for (const [gameTitle, placeId] of Object.entries(hardcodedRoblox)) {
+                            if (gameName.includes(gameTitle) || gameTitle.includes(gameName)) {
+                                foundPlaceId = placeId;
+                                actualName = gameTitle.replace(/\b\w/g, c => c.toUpperCase()); // Format to Title Case
+                                break;
                             }
                         }
 
@@ -371,19 +375,39 @@
                             await speak(`Launching ${actualName} in Roblox!`);
                             window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
                         } else {
-                            // Priority 2: Fallback Scraper using DuckDuckGo via proxy
-                            const searchUrl = `https://html.duckduckgo.com/html/?q=site:roblox.com/games/+${encodeURIComponent(gameName)}`;
-                            const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
-                            const htmlText = await res.text();
-                            
-                            const placeIdMatch = htmlText.match(/roblox\.com(?:%2F|\/)games(?:%2F|\/)(\d+)/i) || htmlText.match(/roblox\.com\/games\/(\d+)/i);
-                            
-                            if (placeIdMatch && placeIdMatch[1]) {
-                                const placeId = placeIdMatch[1];
-                                await speak(`Launching ${gameName} in Roblox!`);
-                                window.location.href = `roblox://experiences/start?placeId=${placeId}`;
+                            // Step B: Fallback to Rolimons direct API search
+                            const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
+                            const rolimonsData = await rolimonsRes.json();
+
+                            if (rolimonsData && rolimonsData.success && rolimonsData.games) {
+                                for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
+                                    const gameTitle = gameInfo[0].toLowerCase();
+                                    if (gameTitle.includes(gameName) || gameName.includes(gameTitle)) {
+                                        foundPlaceId = placeId;
+                                        actualName = gameInfo[0];
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (foundPlaceId) {
+                                await speak(`Launching ${actualName} in Roblox!`);
+                                window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
                             } else {
-                                throw new Error("No ID found");
+                                // Step C: Ultimate crawler proxy fallback
+                                const searchUrl = `https://html.duckduckgo.com/html/?q=site:roblox.com/games/+${encodeURIComponent(gameName)}`;
+                                const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
+                                const htmlText = await res.text();
+                                
+                                const placeIdMatch = htmlText.match(/roblox\.com(?:%2F|\/)games(?:%2F|\/)(\d+)/i) || htmlText.match(/roblox\.com\/games\/(\d+)/i);
+                                
+                                if (placeIdMatch && placeIdMatch[1]) {
+                                    const placeId = placeIdMatch[1];
+                                    await speak(`Launching ${gameName} in Roblox!`);
+                                    window.location.href = `roblox://experiences/start?placeId=${placeId}`;
+                                } else {
+                                    throw new Error("No ID found");
+                                }
                             }
                         }
                     } catch (e) {
@@ -555,7 +579,7 @@
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true; 
-            recognition.lang = 'en-AU'; // Australian English
+            recognition.lang = 'en-AU'; 
 
             recognition.onresult = (event) => {
                 if (isSpeaking) return;
@@ -570,8 +594,8 @@
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
-                // Australian phonetic variations of Guahh
-                const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day)\s+(guahh|gua|gwa|gwah|guwa|goo\s+a|goya|guar|goa|car|guard|growth|glass|goy|god|guitar|galah|gwara|g'war|heygua|egwa|headway|hager|heger|google|work|well|quite|quiet|guide|great|right|write|white|light|mate)|^(guahh|gua|gwa|gwah|g'day|gday)$/i;
+                // Advanced phonetic wake word list targeting "Leo" mishearings (High sensitivity)
+                const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|leave\s+it|lake|leg|link)|^(leo|lio|leeo|g'day|gday)$/i;
 
                 // WAKE WORD HEARD
                 if (wakeWordRegex.test(currentText) && !isListeningState) {
@@ -628,7 +652,7 @@
                 persistentMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 micPermissionGranted = true;
             } catch (err) {
-                responseText.textContent = "Please allow microphone access to use Guahh!";
+                responseText.textContent = "Please allow microphone access to use Leo!";
                 responseText.classList.add('visible');
                 return; 
             }
