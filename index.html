@@ -170,6 +170,12 @@
             <!-- Panel: Configuration Settings -->
             <div id="panel-settings" style="width: 100%; display: none; text-align: left; box-sizing: border-box;">
                 <div style="margin-bottom: 25px; width: 100%;">
+                    <label for="assistant-name-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Assistant Name</label>
+                    <input type="text" id="assistant-name-input" placeholder="Leo" autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s;" />
+                    <div style="font-size: 0.8rem; color: #555; margin-top: 10px; line-height: 1.5; margin-bottom: 25px;">
+                        This name acts as both your assistant's persona name and the voice activation word.
+                    </div>
+
                     <label for="api-key-input" style="font-size: 0.8rem; color: #888; display: block; margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Gemini API Key</label>
                     <!-- Key-masking styling used to bypass 1Password and Chrome Autofill traps -->
                     <input type="text" id="api-key-input" placeholder="Paste your Gemini API key here..." autocomplete="off" style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 1rem; font-family: inherit; outline: none; box-sizing: border-box; transition: border-color 0.2s; -webkit-text-security: disc; text-security: disc;" />
@@ -219,6 +225,7 @@
 
         // Hub Persistent State configuration
         let geminiApiKey = localStorage.getItem('leo_gemini_api_key') || '';
+        let assistantName = localStorage.getItem('leo_assistant_name') || 'Leo';
 
         // SiriWave Variables (Increased dynamic metrics)
         let siriWave;
@@ -413,7 +420,18 @@
             'xbox': 'xbox:',
             'photos': 'ms-photos:',
             'onenote': 'onenote:',
-            'github desktop': 'x-github-client://'
+            'github desktop': 'x-github-client://',
+            'store': 'ms-windows-store:',
+            'microsoft store': 'ms-windows-store:',
+            'teams': 'msteams:',
+            'skype': 'skype:',
+            'outlook': 'outlook:',
+            'feedback hub': 'feedback-hub:',
+            'chrome': 'googlechromes://',
+            'todo': 'ms-todo:',
+            'to do': 'ms-todo:',
+            'file explorer': 'explorer:',
+            'explorer': 'explorer:'
         };
 
         const backupJokes = [
@@ -500,7 +518,17 @@
             { ids: ['8737602449'], names: ['pls donate', 'please donate', 'pls donat', 'ples donate', 'pls donate game', 'please donate game'] },
             { ids: ['192800'], names: ['work at a pizza place', 'pizza place', 'work at pizza', 'pizza game', 'work at a pizza', 'pizza place game', 'work in a pizza place'] },
             { ids: ['69184822'], names: ['theme park tycoon 2', 'theme park tycoon', 'theme park tycoon two', 'tpt2', 'themepark tycoon', 'rollercoaster game', 'theme park game'] },
-            { ids: ['3398014311'], names: ['restaurant tycoon 2', 'restaurant tycoon', 'restaurant tycoon two', 'restaurant game', 'cook game'] }
+            { ids: ['3398014311'], names: ['restaurant tycoon 2', 'restaurant tycoon', 'restaurant tycoon two', 'restaurant game', 'cook game'] },
+            { ids: ['6299141443'], names: ['pet simulator x', 'pet sim x', 'psx'] },
+            { ids: ['606849621'], names: ['jailbreak', 'jail break'] },
+            { ids: ['185655149'], names: ['bloxburg', 'welcome to bloxburg'] },
+            { ids: ['371028615'], names: ['meepcity', 'meep city'] },
+            { ids: ['4616652839'], names: ['shindo life', 'shindo', 'shinobi life'] },
+            { ids: ['4991322055'], names: ['driving empire'] },
+            { ids: ['180126365'], names: ['speed run 4', 'speedrun 4', 'speed run'] },
+            { ids: ['18881174'], names: ['natural disaster survival', 'natural disaster', 'natural disasters'] },
+            { ids: ['5909249005'], names: ['the mimic', 'mimic'] },
+            { ids: ['9225420131'], names: ['fruit battlegrounds', 'fruit battle'] }
         ];
 
         // --- HUB NAVIGATION LOGIC ---
@@ -522,6 +550,7 @@
             const modal = document.getElementById('settings-modal');
             const input = document.getElementById('api-key-input');
             input.value = geminiApiKey;
+            document.getElementById('assistant-name-input').value = assistantName;
             modal.style.display = 'flex';
             switchHubTab('history');
         }
@@ -531,6 +560,11 @@
             const input = document.getElementById('api-key-input');
             geminiApiKey = input.value.trim();
             localStorage.setItem('leo_gemini_api_key', geminiApiKey);
+
+            const nameInput = document.getElementById('assistant-name-input');
+            assistantName = nameInput.value.trim() || 'Leo';
+            localStorage.setItem('leo_assistant_name', assistantName);
+
             modal.style.none = 'none';
             modal.style.display = 'none';
         }
@@ -1372,19 +1406,19 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 5. COIN FLIPPER ---
-            else if (/\b(?:flip.*coin|toss.*coin|coin.*flip|heads or tails|coin|flip|toss)\b/i.test(command)) {
+            else if (/\b(?:coin|flip|toss|heads or tails)\b/i.test(command)) {
                 const result = Math.random() < 0.5 ? 'heads' : 'tails';
                 await speak(`I flipped a coin and it landed on ${result}.`);
             }
 
             // --- 6. DICE ROLLER ---
-            else if (/\b(?:roll.*dice|roll.*die|throw.*dice|throw.*die|dice|die)\b/i.test(command)) {
+            else if (/\b(?:dice|die|roll a die|roll dice)\b/i.test(command)) {
                 const result = Math.floor(Math.random() * 6) + 1;
                 await speak(`I rolled a six-sided die and got a ${result}.`);
             }
 
             // --- 7. RANDOM NUMBER GENERATOR ---
-            else if (/\b(?:random.*number|pick.*number|choose.*number|generate.*number|give.*number|number)\b/i.test(command) && /\b(?:random|pick|choose|generate|select|roll)\b/i.test(command)) {
+            else if (/\b(?:number)\b/i.test(command) && /\b(?:random|pick|choose|generate|select|roll)\b/i.test(command)) {
                 const rangeMatch = command.match(/(?:between|from)\s+(\d+)\s+(?:to|and)\s+(\d+)/i) || command.match(/(\d+)\s*(?:to|and)\s*(\d+)/i);
                 let min = 1, max = 100;
                 if (rangeMatch) {
@@ -1427,7 +1461,7 @@ CRITICAL INSTRUCTIONS:
             }
 
             // --- 9. UNIT CONVERTER ---
-            else if (/\b(?:convert|conversion|celsius|fahrenheit|kilograms|pounds|kilometers|miles|cm|inches|feet|meters)\b/i.test(command)) {
+            else if (/\b(?:convert|conversion|celsius|fahrenheit|kilograms|pounds|kilometers|miles)\b/i.test(command)) {
                 const match = command.match(/convert\s+(\d+(?:\.\d+)?)\s+([a-zA-Z]+)\s+(?:to|into|in)\s+([a-zA-Z]+)/i);
                 if (match) {
                     const val = parseFloat(match[1]);
@@ -1644,49 +1678,77 @@ CRITICAL INSTRUCTIONS:
                 }
             }
             
-            // --- 18. OPEN APPS / ALLOWED WEBSITES (Strictly Regulated) ---
-            else if (/\b(?:open|launch|start|run|go to)\b/i.test(command)) {
-                let appFound = false;
+            // --- 18. OPEN APPS / ALLOWED WEBSITES (Supports Launching Multiple at Once) ---
+            else if (command.includes('open') || command.includes('launch') || command.includes('go to')) {
+                const allowedWebsites = {
+                    'youtube': 'https://www.youtube.com',
+                    'twitter': 'https://www.twitter.com',
+                    'instagram': 'https://www.instagram.com',
+                    'github': 'https://www.github.com',
+                    'reddit': 'https://www.reddit.com',
+                    'tiktok': 'https://www.tiktok.com'
+                };
+
+                let matchedApps = [];
+                let matchedWebsites = [];
+
+                // Find all matching native app keys inside the command
                 for (const [appName, protocol] of Object.entries(appProtocols)) {
-                    if (command.includes(appName)) {
-                        appFound = true;
-                        await speak(`Opening ${appName}.`);
-                        window.location.href = protocol;
-                        break;
+                    const regex = new RegExp(`\\b${appName}\\b`, 'i');
+                    if (regex.test(command)) {
+                        matchedApps.push({ name: appName, protocol: protocol });
                     }
                 }
-                if (!appFound) {
-                    const allowedWebsites = {
-                        'youtube': 'https://www.youtube.com',
-                        'twitter': 'https://www.twitter.com',
-                        'instagram': 'https://www.instagram.com',
-                        'github': 'https://www.github.com',
-                        'reddit': 'https://www.reddit.com',
-                        'tiktok': 'https://www.tiktok.com'
-                    };
 
-                    let webOpened = false;
-                    for (const [siteName, url] of Object.entries(allowedWebsites)) {
-                        if (command.includes(siteName)) {
-                            window.open(url, '_blank');
-                            await speak(`Opening ${siteName} on the web.`);
-                            webOpened = true;
-                            break;
+                // Find all matching websites inside the command
+                for (const [siteName, url] of Object.entries(allowedWebsites)) {
+                    const regex = new RegExp(`\\b${siteName}\\b`, 'i');
+                    if (regex.test(command)) {
+                        if (!matchedApps.some(app => app.name === siteName)) {
+                            matchedWebsites.push({ name: siteName, url: url });
                         }
                     }
+                }
 
-                    if (!webOpened) {
-                        if (geminiApiKey) {
-                            await speak("Thinking...");
-                            const geminiResult = await callGemini(command);
-                            if (geminiResult) {
-                                await executeGeminiAction(geminiResult);
-                                isListeningState = false;
-                                return;
-                            }
-                        }
-                        await speak("I couldn't resolve that opening sequence command.");
+                if (matchedApps.length > 0 || matchedWebsites.length > 0) {
+                    const names = [...matchedApps.map(a => a.name), ...matchedWebsites.map(w => w.name)];
+                    let listStr = "";
+                    if (names.length === 1) {
+                        listStr = names[0];
+                    } else if (names.length === 2) {
+                        listStr = `${names[0]} and ${names[1]}`;
+                    } else {
+                        listStr = names.slice(0, -1).join(', ') + `, and ${names[names.length - 1]}`;
                     }
+
+                    await speak(`Opening ${listStr}.`);
+
+                    // Execute all matched app launch protocols sequentially with delays to prevent blockages
+                    matchedApps.forEach((app, idx) => {
+                        setTimeout(() => {
+                            window.location.href = app.protocol;
+                        }, idx * 350);
+                    });
+
+                    // Launch all websites in new tabs
+                    matchedWebsites.forEach((site) => {
+                        window.open(site.url, '_blank');
+                    });
+
+                    isListeningState = false;
+                    return;
+                } else {
+                    // Let Gemini handle it if nothing matched natively
+                    if (geminiApiKey) {
+                        await speak("Thinking...");
+                        const geminiResult = await callGemini(command);
+                        if (geminiResult) {
+                            await executeGeminiAction(geminiResult);
+                            isListeningState = false;
+                            return;
+                        }
+                    }
+                    await speak("I couldn't resolve that opening sequence command.");
                 }
             }
 
@@ -1728,7 +1790,12 @@ CRITICAL INSTRUCTIONS:
                 }
             }
 
-            // --- 20. COUPLING DISCONNECT FALLBACK (Remote API Reasoner) ---
+            // --- 20. PERSONALITY / NAME CHATTER CONFIG ---
+            else if (/who are you|what is your name/i.test(command)) {
+                await speak(`I am ${assistantName}, your intelligent web-based companion.`);
+            }
+
+            // --- 21. COUPLING DISCONNECT FALLBACK (Remote API Reasoner) ---
             else {
                 if (geminiApiKey) {
                     await speak("Thinking...");
@@ -1748,6 +1815,24 @@ CRITICAL INSTRUCTIONS:
             }
 
             isListeningState = false; 
+        }
+
+        // --- DYNAMIC WAKE WORD RESOLVERS ---
+        function getDynamicWakeWords() {
+            const name = assistantName.toLowerCase();
+            return [
+                `hey ${name}`, `ok ${name}`, `okay ${name}`, `hi ${name}`, `hello ${name}`, `yo ${name}`, `wake up ${name}`
+            ];
+        }
+
+        function getDynamicWakeWordRegex() {
+            const name = assistantName.toLowerCase();
+            if (name === 'leo') {
+                return /(?:hey|ay|hay|hi|gday|g'day|ok|okay|play|say|day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|lake|leg|link|learn|look|loop|blue|glow|flow|line|light|list|left|lit|little|live|love|level|lion|liar|lear|learnt|clear|there|dear|darling|level|file|style|while|dial|mile|smile)|^(leo|lio|leeo|lear|clear)$/i;
+            } else {
+                const escapedName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                return new RegExp(`(?:hey|ay|hay|hi|ok|okay|play|say|day|wake up|hello)\\s+(${escapedName})|^(${escapedName})$`, 'i');
+            }
         }
 
         // --- SPEECH RECOGNITION (Always On) ---
@@ -1796,15 +1881,9 @@ CRITICAL INSTRUCTIONS:
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
-                const directWakeWords = [
-                    'hey leo', 'ok leo', 'okay leo', 'hi leo', 'hello leo', 'g\'day leo', 'gday leo', 'yo leo',
-                    'hey lio', 'ok lio', 'okay lio', 'hey leeo', 'ok leeo', 'hey cleo', 'ok cleo', 'hey neo', 'ok neo',
-                    'hey halo', 'ok halo', 'okay halo', 'wake up leo'
-                ];
-                
+                const directWakeWords = getDynamicWakeWords();
                 const containsDirectWake = directWakeWords.some(phrase => currentText.includes(phrase));
-
-                const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day|ok|okay|play|say|day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|lake|leg|link|learn|look|loop|blue|glow|flow|line|light|list|left|lit|little|live|love|level|lion|liar|lear|learnt|clear|there|dear|darling|level|file|style|while|dial|mile|smile)|^(leo|lio|leeo|lear|g'day|gday|clear)$/i;
+                const wakeWordRegex = getDynamicWakeWordRegex();
 
                 if ((containsDirectWake || wakeWordRegex.test(currentText)) && !isListeningState) {
                     isListeningState = true;
