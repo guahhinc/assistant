@@ -86,7 +86,6 @@
         let isListeningState = false; 
         let idleTimeout = null;
         let micPermissionGranted = false;
-        let persistentMicStream = null;
         let recognitionActive = false; // Tracks Speech Recognition status
         let lastFollowUp = null; // Tracks current follow-up context
         let currentEmailDraft = { recipient: '', subject: '', body: '' };
@@ -142,6 +141,14 @@
         function speak(text) {
             return new Promise((resolve) => {
                 isSpeaking = true;
+                
+                // Temporarily abort recognition so synthesis doesn't loop back into speech input
+                try {
+                    if (recognition) {
+                        recognition.abort();
+                    }
+                } catch(e) {}
+
                 responseText.textContent = text;
                 responseText.classList.add('visible');
 
@@ -155,6 +162,7 @@
                     console.log("Failsafe triggered: Speech Synthesis forced release.");
                     window.speechSynthesis.cancel();
                     isSpeaking = false;
+                    restartRecognition();
                     resolve();
                 }, 10000); 
 
@@ -162,12 +170,14 @@
                     clearTimeout(speakTimeout);
                     isSpeaking = false;
                     setTimeout(() => { if (!isSpeaking) responseText.classList.remove('visible'); }, 3000);
+                    restartRecognition();
                     resolve();
                 };
 
                 utterance.onerror = () => { 
                     clearTimeout(speakTimeout);
                     isSpeaking = false; 
+                    restartRecognition();
                     resolve(); 
                 };
                 
@@ -302,7 +312,7 @@
             { ids: ['920587237'], names: ['adopt me', 'adoptme', 'adot me', 'adult me', 'adopt'] },
             { ids: ['4623386862'], names: ['piggy', 'pigi', 'piggy game', 'peggy', 'pigtail'] },
             { ids: ['126884695634066'], names: ['grow a garden', 'grow garden', 'gro garden', 'grow a gard', 'garden game'] },
-            { ids: ['11157166793'], names: ['ant war', 'and war', 'ent war', 'antwar', 'hand war', 'answer', 'a war', 'ant wars', 'and wars', 'air tour', 'air tours', 'air tour game', 'air war', 'and tour', 'ant tour', 'and tours', 'ant tours', 'and tour game', 'ant tour game'] },
+            { ids: ['11157166793'], names: ['ant war', 'and war', 'ent war', 'antwar', 'hand war', 'answer', 'a war', 'ant wars', 'and wars', 'air tour', 'air tours', 'air tour game', 'air war', 'and tour', 'ant tour', 'and tours', 'ant tours', 'and tour game', 'ant tour game', 'an tour', 'an tour game'] },
             { ids: ['275391552'], names: ['blox fruits', 'blox fruit', 'block fruit', 'block fruits', 'blocks fruit', 'blocks fruits', 'blox-fruit'] },
             { ids: ['4924922222'], names: ['brookhaven', 'brook haven', 'brook-haven', 'brookhaven rp', 'brook-haven rp', 'broke haven'] },
             { ids: ['6872265039'], names: ['bedwars', 'bed wars', 'bed-wars', 'dead wars'] },
@@ -746,7 +756,7 @@
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = true;
+            recognition.continuous = false; // Changed to false for high reliability/responsiveness
             recognition.interimResults = true; 
             recognition.lang = 'en-AU'; 
 
@@ -770,7 +780,8 @@
                 // Explicit direct wake words for high sensitivity
                 const directWakeWords = [
                     'hey leo', 'ok leo', 'okay leo', 'hi leo', 'hello leo', 'g\'day leo', 'gday leo', 'yo leo',
-                    'hey lio', 'ok lio', 'okay lio', 'hey leeo', 'ok leeo', 'hey cleo', 'ok cleo', 'hey neo', 'ok neo'
+                    'hey lio', 'ok lio', 'okay lio', 'hey leeo', 'ok leeo', 'hey cleo', 'ok cleo', 'hey neo', 'ok neo',
+                    'hey halo', 'ok halo', 'okay halo'
                 ];
                 
                 const containsDirectWake = directWakeWords.some(phrase => currentText.includes(phrase));
@@ -826,16 +837,19 @@
 
             recognition.onend = () => {
                 recognitionActive = false;
-                restartRecognition();
+                // Auto-restart immediately to simulate continuous capturing without Chromium freezes
+                if (!isSpeaking) {
+                    restartRecognition();
+                }
             };
 
-            // Watchdog Keep-Alive Loop: Resolves flakiness/stalls by forcing restart every 2.5s if silently closed
+            // Watchdog Keep-Alive Loop: Resolves flakiness/stalls by forcing restart every 1.5s if silently closed
             setInterval(() => {
                 if (!recognitionActive && !isSpeaking && micPermissionGranted) {
                     console.log("Watchdog Keep-Alive: Waking Speech Recognition up.");
                     restartRecognition();
                 }
-            }, 2500);
+            }, 1500);
 
             restartRecognition();
         }
@@ -843,8 +857,9 @@
         // --- AUTOMATIC INITIALIZATION (ON LOAD) ---
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Keep the stream alive globally so the microphone never goes to sleep or prompts again
-                persistentMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Request mic permission to trigger browser authorization, then immediately release lock
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
                 micPermissionGranted = true;
             } catch (err) {
                 responseText.textContent = "Please allow microphone access to use Leo!";
