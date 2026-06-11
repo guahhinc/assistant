@@ -88,6 +88,8 @@
         let micPermissionGranted = false;
         let persistentMicStream = null;
         let recognitionActive = false; // Tracks Speech Recognition status
+        let lastFollowUp = null; // Tracks current follow-up context
+        let currentEmailDraft = { recipient: '', subject: '', body: '' };
 
         // SiriWave Variables
         let siriWave;
@@ -173,6 +175,21 @@
             });
         }
 
+        // Activates target listening state for interactive follow-up responses
+        function triggerFollowUpListening() {
+            setTimeout(() => {
+                isListeningState = true;
+                activationSound.currentTime = 0;
+                activationSound.play().catch(e => console.log("Audio play blocked."));
+
+                clearTimeout(idleTimeout);
+                idleTimeout = setTimeout(() => {
+                    isListeningState = false;
+                    lastFollowUp = null; // Reset context on idle timeout
+                }, 8000); 
+            }, 300);
+        }
+
         // --- SPOKEN WORDS TO MATH DIGITS CONVERTER ---
         function convertSpokenNumbers(text) {
             const units = {
@@ -256,6 +273,18 @@
             "Why did the Wi-Fi go to therapy? It had too many connection issues."
         ];
 
+        const backupFacts = [
+            "Honey never spoils. You can theoretically eat 3,000-year-old honey.",
+            "Dead people can get goosebumps.",
+            "The total weight of all the ants on Earth is roughly equal to the total weight of all humans.",
+            "Bananas are berries, but strawberries aren't.",
+            "A day on Venus is longer than a year on Venus.",
+            "Wombat poop is cube-shaped, which stops it from rolling away.",
+            "The heart of a shrimp is located in its head.",
+            "Sloths can hold their breath longer than dolphins can.",
+            "An octopus has three hearts and blue blood."
+        ];
+
         const casualResponses = {
             'how old are you': "I was born in 2026, which makes me quite young, but I have the knowledge of the entire internet!",
             'where do you live': "I live right here inside your computer's memory, in the digital world.",
@@ -297,10 +326,76 @@
             const cancelWords = ['nothing', 'nevermind', 'never mind', 'cancel', 'stop', 'nvm', 'forget it'];
             if (cancelWords.includes(command)) {
                 isListeningState = false;
+                lastFollowUp = null; 
+                await speak("Cancelled.");
                 return; 
             }
 
             isListeningState = true; 
+
+            // --- INTERACTIVE FOLLOW-UP CONTEXT HANDLING ---
+            if (lastFollowUp) {
+                const context = lastFollowUp;
+                lastFollowUp = null; // Clear context immediately to avoid loops
+
+                if (context === 'reminder_task') {
+                    const taskText = command.trim();
+                    await speak(`Opening Google Calendar to set a reminder to ${taskText}.`);
+                    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(taskText)}`;
+                    window.open(calendarUrl, '_blank');
+                    isListeningState = false;
+                    return;
+                }
+
+                if (context === 'email_recipient') {
+                    currentEmailDraft.recipient = command.trim();
+                    await speak("What is the subject of the email?");
+                    lastFollowUp = 'email_subject';
+                    triggerFollowUpListening();
+                    return;
+                }
+
+                if (context === 'email_subject') {
+                    currentEmailDraft.subject = command.trim();
+                    await speak("What is the body of the email?");
+                    lastFollowUp = 'email_body';
+                    triggerFollowUpListening();
+                    return;
+                }
+
+                if (context === 'email_body') {
+                    currentEmailDraft.body = command.trim();
+                    const recipient = currentEmailDraft.recipient;
+                    const subject = currentEmailDraft.subject;
+                    const body = currentEmailDraft.body;
+
+                    const toField = recipient.includes('@') ? recipient : "";
+                    const finalBody = recipient && !recipient.includes('@') 
+                        ? `Hi ${recipient},\n\n${body}` 
+                        : body;
+
+                    await speak(`Opening Outlook to draft your email to ${recipient}.`);
+                    window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
+                    isListeningState = false;
+                    return;
+                }
+
+                if (context === 'search_query') {
+                    const query = command.trim();
+                    await speak(`Here is what I found for ${query}.`);
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                    isListeningState = false;
+                    return;
+                }
+
+                if (context === 'youtube_query') {
+                    const query = command.trim();
+                    await speak(`Playing ${query} on YouTube.`);
+                    window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
+                    isListeningState = false;
+                    return;
+                }
+            }
 
             // --- 1. MATH EVALUATION ---
             let mathExpr = convertSpokenNumbers(command)
@@ -343,12 +438,14 @@
                     window.open(calendarUrl, '_blank');
                 } else {
                     await speak("What would you like me to remind you about?");
+                    lastFollowUp = 'reminder_task';
+                    triggerFollowUpListening();
                 }
             }
 
             // --- 5. CASUAL TALK & GREETINGS (Phonetic Synonym Friendly) ---
             else if (/what can you do|features|help me/i.test(command)) {
-                await speak("I can open apps on your PC like Roblox, Steam, Spotify or Discord, draft Outlook emails with spoken content, set reminders in Google Calendar, solve math equations, tell you the time and date, pull up Melbourne weather, and tell you clean jokes or interesting facts.");
+                await speak("I can open apps on your PC, draft emails, solve math equations, tell you the time, date, weather, and tell you jokes or facts.");
             }
             else if (/how are you|how's it going|how do you do/i.test(command)) {
                 await speak("I'm doing wonderfully, thanks for asking! Ready to help you.");
@@ -381,6 +478,15 @@
                     await speak(backupJokes[Math.floor(Math.random() * backupJokes.length)]);
                 }
             }
+            else if (/fact|tell me a fact|interesting fact|something cool/i.test(command)) {
+                try {
+                    const res = await fetch('https://uselessfacts.jsph.pl/api/v2/facts/random?language=en');
+                    const data = await res.json();
+                    await speak(data.text || backupFacts[Math.floor(Math.random() * backupFacts.length)]);
+                } catch (e) {
+                    await speak(backupFacts[Math.floor(Math.random() * backupFacts.length)]);
+                }
+            }
 
             // --- 7. YOUTUBE RANDOMIZER & PLAYBACK ---
             else if (command.includes('random youtube video') || command.includes('random video on youtube')) {
@@ -391,8 +497,14 @@
             }
             else if (command.startsWith('play') && command.includes('on youtube')) {
                 const query = command.replace('play', '').replace('on youtube', '').trim();
-                await speak(`Playing ${query} on YouTube.`);
-                window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
+                if (query) {
+                    await speak(`Playing ${query} on YouTube.`);
+                    window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
+                } else {
+                    await speak("What would you like me to play on YouTube?");
+                    lastFollowUp = 'youtube_query';
+                    triggerFollowUpListening();
+                }
             }
 
             // --- 8. ROBLOX EXPERIENCE LAUNCHER (Robust Hardcoded Mapping Database) ---
@@ -469,8 +581,14 @@
             }
             else if (command.startsWith('search') || command.includes('search for')) {
                 const query = command.replace(/(search for|search)/g, '').trim();
-                await speak(`Here is what I found for ${query}.`);
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                if (query) {
+                    await speak(`Here is what I found for ${query}.`);
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                } else {
+                    await speak("What would you like me to search for?");
+                    lastFollowUp = 'search_query';
+                    triggerFollowUpListening();
+                }
             }
             
             // --- 11. WEATHER ---
@@ -568,20 +686,31 @@
                     recipient = match[1].trim();
                     subject = match[2].trim();
                     body = match[3].trim();
+                    
+                    const toField = recipient.includes('@') ? recipient : "";
+                    const finalBody = recipient && !recipient.includes('@') 
+                        ? `Hi ${recipient},\n\n${body}` 
+                        : body;
+
+                    await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
+                    window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
                 } else {
+                    // Check if they named a recipient like "email to Mum"
                     const toMatch = command.match(/to\s+([a-zA-Z0-9@\.\s]+)/i);
-                    const aboutMatch = command.match(/about\s+(.+)/i);
-                    if (toMatch) recipient = toMatch[1].split(' ')[0].trim();
-                    if (aboutMatch) subject = aboutMatch[1].trim();
+                    if (toMatch) {
+                        recipient = toMatch[1].split(' ')[0].trim();
+                        currentEmailDraft.recipient = recipient;
+                        await speak("What is the subject of the email?");
+                        lastFollowUp = 'email_subject';
+                        triggerFollowUpListening();
+                    } else {
+                        // Launch full conversational sequence
+                        await speak("Who is the recipient of the email?");
+                        lastFollowUp = 'email_recipient';
+                        currentEmailDraft = { recipient: '', subject: '', body: '' };
+                        triggerFollowUpListening();
+                    }
                 }
-
-                const toField = recipient.includes('@') ? recipient : "";
-                const finalBody = recipient && !recipient.includes('@') 
-                    ? `Hi ${recipient},\n\n${body}` 
-                    : body;
-
-                await speak(`Opening Outlook to draft your email to ${recipient || 'someone'}.`);
-                window.open(`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toField)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalBody)}`, "_blank");
             }
 
             // --- 15. FALLBACK FEEDBACK ---
@@ -650,6 +779,7 @@
                     clearTimeout(idleTimeout);
                     idleTimeout = setTimeout(() => {
                         isListeningState = false;
+                        lastFollowUp = null;
                     }, 8000); 
                 }
 
