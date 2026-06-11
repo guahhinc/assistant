@@ -89,6 +89,7 @@
         let recognitionActive = false; // Tracks Speech Recognition status
         let lastFollowUp = null; // Tracks current follow-up context
         let currentEmailDraft = { recipient: '', subject: '', body: '' };
+        let currentSearchQuery = ""; // Caches search query for interactive search fallback
 
         // SiriWave Variables
         let siriWave;
@@ -255,7 +256,6 @@
             'zoom': 'zoommtg://',
             'slack': 'slack://',
             'netflix': 'netflix://',
-            'file explorer': 'explorer:',
             'settings': 'ms-settings:',
             'paint': 'ms-paint:',
             'camera': 'microsoft.windows.camera:',
@@ -292,7 +292,22 @@
             "Wombat poop is cube-shaped, which stops it from rolling away.",
             "The heart of a shrimp is located in its head.",
             "Sloths can hold their breath longer than dolphins can.",
-            "An octopus has three hearts and blue blood."
+            "An octopus has three hearts and blue blood.",
+            "The world's oldest known recipe is a recipe for beer from ancient Sumeria.",
+            "Cow magnets are placed in cows' stomachs to attract swallowed wire and metal to protect their hearts.",
+            "Surtsey, a volcanic island off Iceland, was created in 1963 and is strictly off-limits to humans except for scientists studying ecosystem development.",
+            "A single strand of spider silk is stronger than a steel wire of the same thickness.",
+            "Polar bears have black skin under their white fur.",
+            "Nutmeg is extremely toxic to dogs and can cause hallucinations in humans in high doses.",
+            "The pressure at the deepest point of the ocean, the Mariana Trench, is equal to about 50 jumbo jets piled on top of a person.",
+            "Tears of joy and tears of sadness have entirely different chemical structures when viewed under a microscope.",
+            "The Eiffel Tower can grow up to 15 centimeters taller during hot summer days because of thermal expansion.",
+            "Cats have fewer toes on their back paws than their front paws.",
+            "Apples float in water because they are 25 percent air.",
+            "The first computer bug was a real moth found trapped in a relay of the Harvard Mark II computer in 1947.",
+            "A teaspoon of a neutron star would weigh about 6 billion tons on Earth.",
+            "Slime mold is a single-celled organism that can solve complex mazes and navigate puzzles without a brain.",
+            "The state of Wyoming only has two escalators."
         ];
 
         const casualResponses = {
@@ -327,7 +342,13 @@
             { ids: ['10403335882'], names: ['strongest battlegrounds', 'strongest battleground', 'battlegrounds', 'strongest battle'] },
             { ids: ['6510313886'], names: ['doors', 'door', 'doors game', 'door game'] },
             { ids: ['1150495914'], names: ['car dealership tycoon', 'car dealership', 'car tycoon'] },
-            { ids: ['1537690962'], names: ['bee swarm simulator', 'bee swarm', 'bee simulator'] }
+            { ids: ['1537690962'], names: ['bee swarm simulator', 'bee swarm', 'bee simulator', 'roblox bee swarm simulator', 'bee swarm simulator on roblox', 'bee swarm simulator in roblox'] },
+            { ids: ['893973440'], names: ['flee the facility', 'flee', 'flee facility', 'flee the faciliti', 'escape the facility', 'flee the facility game'] },
+            { ids: ['13772394625'], names: ['blade ball', 'bladeball', 'blad ball', 'bladball', 'blade-ball', 'blade ball game'] },
+            { ids: ['8737602449'], names: ['pls donate', 'please donate', 'pls donat', 'ples donate', 'pls donate game', 'please donate game'] },
+            { ids: ['192800'], names: ['work at a pizza place', 'pizza place', 'work at pizza', 'pizza game', 'work at a pizza', 'pizza place game', 'work in a pizza place'] },
+            { ids: ['69184822'], names: ['theme park tycoon 2', 'theme park tycoon', 'theme park tycoon two', 'tpt2', 'themepark tycoon', 'rollercoaster game', 'theme park game'] },
+            { ids: ['3398014311'], names: ['restaurant tycoon 2', 'restaurant tycoon', 'restaurant tycoon two', 'restaurant game', 'cook game'] }
         ];
 
         // --- BRAIN & COMMAND LOGIC ---
@@ -402,6 +423,17 @@
                     const query = command.trim();
                     await speak(`Playing ${query} on YouTube.`);
                     window.open(`https://duckduckgo.com/?q=!yt+${encodeURIComponent(query)}`, '_blank');
+                    isListeningState = false;
+                    return;
+                }
+
+                if (context === 'google_search_confirm') {
+                    if (/yes|yeah|yep|sure|ok|okay/i.test(command)) {
+                        await speak(`Searching Google for ${currentSearchQuery}.`);
+                        window.open(`https://www.google.com/search?q=${encodeURIComponent(currentSearchQuery)}`, '_blank');
+                    } else {
+                        await speak("Alright, let me know if you need anything else.");
+                    }
                     isListeningState = false;
                     return;
                 }
@@ -517,30 +549,51 @@
                 }
             }
 
-            // --- 8. ROBLOX EXPERIENCE LAUNCHER (Robust Hardcoded Mapping Database) ---
-            else if (command.includes('in roblox') || command.includes('in raw blocks') || command.includes('in road blocks')) {
-                // Parse out the game name
-                const match = command.match(/open (.+?) (?:in roblox|in raw blocks|in road blocks)/i) || command.match(/launch (.+?) (?:in roblox|in raw blocks|in road blocks)/i);
-                if (match) {
-                    const gameName = match[1].trim().toLowerCase();
-                    
+            // --- 8. SMARTER ROBLOX LAUNCHER (Intercepts Game and Platform synonyms) ---
+            else if (
+                robloxGames.some(game => game.names.some(name => command.includes(name))) || 
+                /roblox|raw blocks|road blocks|row blocks|rowbox|rawbox|roadbox|raw box|road box|row box/i.test(command)
+            ) {
+                const robloxKeywords = ['roblox', 'raw blocks', 'road blocks', 'row blocks', 'rowbox', 'rawbox', 'roadbox', 'raw box', 'road box', 'row box'];
+                let isRobloxRequest = robloxKeywords.some(keyword => command.includes(keyword));
+                
+                // Extract game name query by cleaning platform specifications and action verbs
+                let gameQuery = command;
+                
+                robloxKeywords.forEach(kw => {
+                    const regex = new RegExp(`\\s*(?:in|on|at)?\\s*${kw}\\s*`, 'gi');
+                    gameQuery = gameQuery.replace(regex, ' ');
+                });
+                
+                gameQuery = gameQuery.replace(/^(open|launch|play|start|run|go to)\s+/gi, '').trim();
+                gameQuery = gameQuery.replace(/\s+/g, ' ').trim();
+
+                let matchedGame = null;
+                if (gameQuery.length > 0) {
+                    for (const game of robloxGames) {
+                        if (game.names.some(name => gameQuery === name || gameQuery.includes(name) || name.includes(gameQuery))) {
+                            matchedGame = game;
+                            break;
+                        }
+                    }
+                }
+
+                if (matchedGame || (isRobloxRequest && gameQuery.length > 0)) {
                     let foundPlaceId = null;
                     let actualName = "";
 
-                    // Match spoken phonetic names directly to our curated database
-                    for (const game of robloxGames) {
-                        if (game.names.some(n => gameName.includes(n) || n.includes(gameName))) {
-                            foundPlaceId = game.ids[0];
-                            actualName = game.names[0].replace(/\b\w/g, c => c.toUpperCase());
-                            break;
-                        }
+                    if (matchedGame) {
+                        foundPlaceId = matchedGame.ids[0];
+                        actualName = matchedGame.names[0].replace(/\b\w/g, c => c.toUpperCase());
                     }
 
                     if (foundPlaceId) {
                         await speak(`Launching ${actualName} in Roblox!`);
                         window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                        isListeningState = false;
+                        return;
                     } else {
-                        // Fallback: Rolimons API
+                        // Fallback: Query Rolimons Catalog Database
                         try {
                             const rolimonsRes = await fetch('https://api.rolimons.com/games/v1/gamelist');
                             const rolimonsData = await rolimonsRes.json();
@@ -548,7 +601,7 @@
                             if (rolimonsData && rolimonsData.success && rolimonsData.games) {
                                 for (const [placeId, gameInfo] of Object.entries(rolimonsData.games)) {
                                     const gameTitle = gameInfo[0].toLowerCase();
-                                    if (gameTitle.includes(gameName) || gameName.includes(gameTitle)) {
+                                    if (gameTitle.includes(gameQuery) || gameQuery.includes(gameTitle)) {
                                         foundPlaceId = placeId;
                                         actualName = gameInfo[0];
                                         break;
@@ -559,13 +612,21 @@
                             if (foundPlaceId) {
                                 await speak(`Launching ${actualName} in Roblox!`);
                                 window.location.href = `roblox://experiences/start?placeId=${foundPlaceId}`;
+                                isListeningState = false;
+                                return;
                             } else {
                                 throw new Error("No dynamic ID found");
                             }
                         } catch (e) {
-                            await speak(`I couldn't find the Roblox game ${gameName} in our database.`);
+                            await speak(`I couldn't find the Roblox game ${gameQuery || 'requested'} in our database.`);
                         }
                     }
+                } else if (isRobloxRequest && gameQuery.length === 0) {
+                    // Direct main application launcher call
+                    await speak("Opening Roblox.");
+                    window.location.href = "roblox://";
+                    isListeningState = false;
+                    return;
                 }
             }
             
@@ -618,9 +679,9 @@
                 }
             } 
 
-            // --- 12. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK ---
-            else if (/^(what is|whats|who is|whos|tell me about|explain)\b/i.test(command)) {
-                const query = command.replace(/^(what is|whats|who is|whos|tell me about|explain)\s+/gi, '').trim();
+            // --- 12. WIKIPEDIA / GENERAL KNOWLEDGE FALLBACK (Smarter Web Search Fallback) ---
+            else if (/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\b/i.test(command)) {
+                const query = command.replace(/^(what is|whats|who is|whos|tell me about|explain|how do you|why do)\s+/gi, '').trim();
                 try {
                     const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&origin=*`);
                     const searchData = await searchRes.json();
@@ -638,9 +699,17 @@
                             return;
                         }
                     }
-                    await speak(`I don't have a direct answer for ${query} in my database.`);
+                    
+                    // Route to smart Google search fallback
+                    currentSearchQuery = query;
+                    await speak(`I couldn't find a direct article on ${query}. Would you like me to search Google?`);
+                    lastFollowUp = 'google_search_confirm';
+                    triggerFollowUpListening();
                 } catch (e) {
-                    await speak("I had a bit of trouble connecting to my knowledge base.");
+                    currentSearchQuery = query;
+                    await speak(`I had trouble reaching my database. Would you like me to search Google for ${query} instead?`);
+                    lastFollowUp = 'google_search_confirm';
+                    triggerFollowUpListening();
                 }
             }
             
@@ -756,7 +825,7 @@
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Changed to false for high reliability/responsiveness
+            recognition.continuous = false; // Set to false for high reliability/responsiveness
             recognition.interimResults = true; 
             recognition.lang = 'en-AU'; 
 
