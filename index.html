@@ -302,7 +302,7 @@
             { ids: ['920587237'], names: ['adopt me', 'adoptme', 'adot me', 'adult me', 'adopt'] },
             { ids: ['4623386862'], names: ['piggy', 'pigi', 'piggy game', 'peggy', 'pigtail'] },
             { ids: ['126884695634066'], names: ['grow a garden', 'grow garden', 'gro garden', 'grow a gard', 'garden game'] },
-            { ids: ['11157166793'], names: ['ant war', 'and war', 'ent war', 'antwar', 'hand war', 'answer', 'a war', 'ant wars', 'and wars', 'air tour', 'air tours', 'air tour game', 'air war'] },
+            { ids: ['11157166793'], names: ['ant war', 'and war', 'ent war', 'antwar', 'hand war', 'answer', 'a war', 'ant wars', 'and wars', 'air tour', 'air tours', 'air tour game', 'air war', 'and tour', 'ant tour', 'and tours', 'ant tours', 'and tour game', 'ant tour game'] },
             { ids: ['275391552'], names: ['blox fruits', 'blox fruit', 'block fruit', 'block fruits', 'blocks fruit', 'blocks fruits', 'blox-fruit'] },
             { ids: ['4924922222'], names: ['brookhaven', 'brook haven', 'brook-haven', 'brookhaven rp', 'brook-haven rp', 'broke haven'] },
             { ids: ['6872265039'], names: ['bedwars', 'bed wars', 'bed-wars', 'dead wars'] },
@@ -767,11 +767,19 @@
 
                 const currentText = (finalTranscript || interimTranscript).toLowerCase().trim();
                 
-                // Advanced phonetic wake word list targeting "Leo" mishearings (High sensitivity)
+                // Explicit direct wake words for high sensitivity
+                const directWakeWords = [
+                    'hey leo', 'ok leo', 'okay leo', 'hi leo', 'hello leo', 'g\'day leo', 'gday leo', 'yo leo',
+                    'hey lio', 'ok lio', 'okay lio', 'hey leeo', 'ok leeo', 'hey cleo', 'ok cleo', 'hey neo', 'ok neo'
+                ];
+                
+                const containsDirectWake = directWakeWords.some(phrase => currentText.includes(phrase));
+
+                // Advanced phonetic wake word list targeting "Leo" mishearings (High sensitivity fallback)
                 const wakeWordRegex = /(?:hey|ay|hay|hi|gday|g'day|ok|okay|play|say|day)\s+(leo|lio|leeo|leow|liao|layo|neo|cleo|theo|layer|layout|low|law|lead|let|letter|leave|lake|leg|link|learn|look|loop|blue|glow|flow|line|light|list|left|lit|little|live|love|level|lion|liar|lear|learnt|clear|there|dear|darling|level|file|style|while|dial|mile|smile)|^(leo|lio|leeo|lear|g'day|gday|clear)$/i;
 
                 // WAKE WORD HEARD
-                if (wakeWordRegex.test(currentText) && !isListeningState) {
+                if ((containsDirectWake || wakeWordRegex.test(currentText)) && !isListeningState) {
                     isListeningState = true;
                     activationSound.currentTime = 0;
                     activationSound.play().catch(e => console.log("Audio requires interaction first time."));
@@ -787,9 +795,19 @@
                 if (finalTranscript) {
                     let commandText = finalTranscript.toLowerCase();
                     
+                    // Remove direct wake words first to avoid command contamination
+                    for (const phrase of directWakeWords) {
+                        if (commandText.includes(phrase)) {
+                            commandText = commandText.replace(phrase, '').trim();
+                        }
+                    }
+
                     if (wakeWordRegex.test(commandText)) {
                         commandText = commandText.replace(wakeWordRegex, '').trim();
                     }
+
+                    // Clean up potential leading/trailing punctuation or particles
+                    commandText = commandText.replace(/^[,.\s?]+|[,.\s?]+$/g, '').trim();
 
                     if (isListeningState) {
                         // Filter out short background noises
