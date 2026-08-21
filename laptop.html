@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laptop Buying Guide</title>
+  
+  <!-- Inter Tight Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --brand: #2563eb;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ========================================================
+       TOP NAVIGATION & MOBILE SIDEBAR
+       ======================================================== */
+    nav.top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+    }
+    .top-bar-inner {
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .site-logo {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.03em;
+    }
+    .desktop-nav-links {
+      display: none;
+      gap: 6px;
+    }
+    @media (min-width: 768px) {
+      .desktop-nav-links {
+        display: flex;
+      }
+    }
+    .nav-tab {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+    }
+    .nav-tab:hover {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+    .nav-tab.active {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    /* Mobile Hamburger Button */
+    .mobile-menu-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      color: var(--text);
+    }
+    @media (min-width: 768px) {
+      .mobile-menu-btn {
+        display: none;
+      }
+    }
+
+    /* Mobile Sidebar & Overlay */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .sidebar-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .mobile-sidebar {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 260px;
+      height: 100vh;
+      background: #ffffff;
+      z-index: 210;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+      transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar-overlay.open .mobile-sidebar {
+      right: 0;
+    }
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+    }
+    .sidebar-link {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s ease;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+      background: #f1f5f9;
+    }
+
+    /* ========================================================
+       ANIMATED VIEW SWITCHING
+       ======================================================== */
+    .page-view {
+      display: none;
+      opacity: 0;
+    }
+    .page-view.active {
+      display: block;
+      animation: viewFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes viewFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .main-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    @media (min-width: 768px) {
+      .main-container {
+        padding: 56px 20px 100px;
+      }
+    }
+
+    .page-header {
+      margin-bottom: 36px;
+    }
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    @media (min-width: 768px) {
+      .page-header h1 {
+        font-size: 3rem;
+      }
+    }
+    .page-header p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+    }
+
+    /* Catalog Filter Buttons: Cheapest to Top */
+    .catalog-filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 32px;
+      scrollbar-width: none;
+    }
+    .catalog-filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .filter-chip {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .filter-chip:hover {
+      background: #f1f5f9;
+      color: var(--text);
+    }
+    .filter-chip.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+
+    /* ========================================================
+       LAPTOP PRODUCT CARDS
+       ======================================================== */
+    .laptop-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .laptop-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: center;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    @media (min-width: 640px) {
+      .laptop-card {
+        grid-template-columns: 180px 1fr;
+        gap: 32px;
+        padding: 30px;
+      }
+    }
+    .laptop-card:hover {
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
+    }
+
+    .laptop-img-wrap {
+      width: 100%;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .laptop-img-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+    .laptop-card:hover .laptop-img-wrap img {
+      transform: scale(1.02);
+    }
+
+    .laptop-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+    .laptop-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .laptop-specs {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+    .laptop-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .laptop-price {
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background-color 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: var(--text);
+      border-color: #cbd5e1;
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    .btn-primary {
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #334155;
+    }
+
+    /* ========================================================
+       PAGE: MATCHER
+       ======================================================== */
+    .matcher-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+    @media (min-width: 768px) {
+      .matcher-card {
+        padding: 36px;
+      }
+    }
+
+    .matcher-group {
+      margin-bottom: 28px;
+    }
+    .matcher-label {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .matcher-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .interactive-chip {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .interactive-chip:hover {
+      background: #e2e8f0;
+    }
+    .interactive-chip.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+
+    .matcher-result-wrap {
+      margin-top: 36px;
+      padding: 24px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      animation: resultPop 0.25s ease-out;
+    }
+    @keyframes resultPop {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (min-width: 600px) {
+      .matcher-result-wrap {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+    .matcher-result-img {
+      width: 140px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      flex-shrink: 0;
+    }
+    .matcher-result-img img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .matcher-result-body {
+      flex: 1;
+    }
+
+    /* ========================================================
+       PAGE: INFO & OS GUIDE (WITH EMBEDDED PREVIEWS)
+       ======================================================== */
+    .info-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 768px) {
+      .info-block {
+        padding: 36px;
+      }
+    }
+    .info-block h2 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .info-lead {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .info-longevity-box {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .os-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-top: 28px;
+    }
+    @media (min-width: 680px) {
+      .os-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .os-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .os-card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+    .os-card-img-wrap {
+      width: 100%;
+      height: 160px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #ffffff;
+    }
+    .os-card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .os-card-desc {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* ========================================================
+       FULL PRODUCT SUB-PAGE VIEWS
+       ======================================================== */
+    .product-view-layout {
+      width: 100%;
+      min-height: 100vh;
+      background: #ffffff;
+      padding-bottom: 120px;
+    }
+    .subpage-bar {
+      border-bottom: 1px solid var(--border);
+      background: #ffffff;
+      padding: 14px 20px;
+      position: sticky;
+      top: 57px;
+      z-index: 90;
+    }
+    .subpage-bar-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-back {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      background: #f1f5f9;
+    }
+    .btn-back:hover {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    .product-view-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 0;
+    }
+    @media (min-width: 768px) {
+      .product-view-content {
+        padding: 56px 20px 0;
+      }
+    }
+
+    .product-hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      align-items: center;
+      margin-bottom: 48px;
+    }
+    @media (min-width: 768px) {
+      .product-hero-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 50px;
+      }
+    }
+
+    .product-media-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 280px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    .product-media-box img {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+    }
+
+    .product-heading h1 {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin: 10px 0 14px;
+    }
+    .product-heading p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .product-heading-price {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      margin-bottom: 20px;
+    }
+
+    /* Stat & Feature Boxes */
+    .stat-box {
+      padding: 32px;
+      border-radius: var(--radius-lg);
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+    .stat-number {
+      font-size: 3.4rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: #0f172a;
+    }
+    .stat-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .stat-desc {
+      font-size: 0.98rem;
+      color: var(--text-muted);
+    }
+
+    .editorial-quote {
+      border-left: 4px solid #0f172a;
+      padding: 18px 22px;
+      background: #f8fafc;
+      border-radius: 0 12px 12px 0;
+      margin-bottom: 36px;
+    }
+    .editorial-quote-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .editorial-quote-text {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .gallery-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .gallery-stack img {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    /* Specs Table */
+    .spec-table {
+      border-top: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+    .spec-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (min-width: 600px) {
+      .spec-row {
+        grid-template-columns: 220px 1fr;
+      }
+    }
+    .spec-label {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .spec-val {
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+
+    .bottom-cta-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Desktop Navigation -->
+  <nav class="top-bar">
+    <div class="top-bar-inner">
+      <a href="#home" class="site-logo">Laptop Guide</a>
+      
+      <div class="desktop-nav-links">
+        <a href="#home" class="nav-tab" id="desktop-tab-home">Laptops</a>
+        <a href="#matcher" class="nav-tab" id="desktop-tab-matcher">Matcher</a>
+        <a href="#info" class="nav-tab" id="desktop-tab-info">Info & OS</a>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="mobile-menu-btn" id="open-sidebar-btn" aria-label="Open menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Collapsible Mobile Sidebar Overlay & Drawer -->
+  <div class="sidebar-overlay" id="sidebar-overlay">
+    <div class="mobile-sidebar">
+      <div class="sidebar-header">
+        <span style="font-size: 1.1rem; font-weight: 800;">Menu</span>
+        <button class="sidebar-close-btn" id="close-sidebar-btn" aria-label="Close menu">&times;</button>
+      </div>
+      <a href="#home" class="sidebar-link" id="mob-tab-home">Laptops</a>
+      <a href="#matcher" class="sidebar-link" id="mob-tab-matcher">Matcher</a>
+      <a href="#info" class="sidebar-link" id="mob-tab-info">Info & OS</a>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PAGE 1: ALL LAPTOPS
+       ======================================================== -->
+  <div id="view-home" class="page-view active">
+    <div class="main-container">
+      
+      <div class="page-header">
+        <h1>Laptop Catalog</h1>
+        <p>Curated recommendations grouped by performance, reliability, and value.</p>
+      </div>
+
+      <!-- Filter Chips: Ordered Cheapest to Top -->
+      <div class="catalog-filter-bar" id="tier-filter-bar">
+        <button type="button" class="filter-chip active" data-filter="all">All Laptops</button>
+        <button type="button" class="filter-chip" data-filter="cheap">Cheap</button>
+        <button type="button" class="filter-chip" data-filter="low">Low Tier</button>
+        <button type="button" class="filter-chip" data-filter="mid">Mid Tier</button>
+        <button type="button" class="filter-chip" data-filter="high">High Tier</button>
+      </div>
+
+      <!-- Laptop Cards (Default Order: Mid Tier -> Low Tier -> High Tier -> Cheap) -->
+      <div class="laptop-list" id="laptop-card-container">
+
+        <!-- 1. MID TIER: MacBook Neo 13" -->
+        <div class="laptop-card" data-tier="mid">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://www.jbhifi.com.au/cdn/shop/files/890863-Product-0-I-639082503603198021.jpg?v=1772653625" 
+              alt="MacBook Neo" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Mid Tier</span>
+              <span class="badge">★ Recommended Pick</span>
+            </div>
+            <h2 class="laptop-title">Apple MacBook Neo 13"</h2>
+            <p class="laptop-specs">Apple A18 Pro Chip • 8GB Unified Memory • 256GB SSD • Touch ID Optional</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$1,049</span>
+              <a href="#product-neo" class="btn btn-primary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. MID TIER: Lenovo IdeaPad Slim 3 15.6" -->
+        <div class="laptop-card" data-tier="mid">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png" 
+              alt="Lenovo IdeaPad Slim 3 15.6" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Mid Tier</span>
+            </div>
+            <h2 class="laptop-title">Lenovo IdeaPad Slim 3 15.6"</h2>
+            <p class="laptop-specs">AMD Ryzen 5 5625U • 16GB RAM • 512GB SSD • Arctic Grey • Windows 11</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$998</span>
+              <a href="#product-lenovo" class="btn btn-primary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. LOW TIER: Acer Aspire Lite 15 -->
+        <div class="laptop-card" data-tier="low">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://cdn.shopify.com/s/files/1/0641/9388/8321/files/50094362_951283.png?v=1776232880" 
+              alt="Acer Aspire Lite 15" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h2 class="laptop-title">Acer Aspire Lite 15</h2>
+            <p class="laptop-specs">AMD Ryzen 3 5400U • 8GB RAM • 256GB SSD • 15.6" Full HD • Windows</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$598</span>
+              <a href="#product-acer" class="btn btn-secondary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. LOW TIER: Asus VivoBook Go 14" -->
+        <div class="laptop-card" data-tier="low">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://www.jbhifi.com.au/cdn/shop/files/890900-Product-0-I-639149307603116841.jpg?v=1779668168" 
+              alt="Asus VivoBook Go 14" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h2 class="laptop-title">Asus VivoBook Go 14"</h2>
+            <p class="laptop-specs">AMD Athlon Silver • 14" Full HD • 128GB Storage • Windows 11</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$499</span>
+              <a href="#product-asus" class="btn btn-secondary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. LOW TIER: Lenovo IdeaPad Slim 3 14" -->
+        <div class="laptop-card" data-tier="low">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png" 
+              alt="Lenovo IdeaPad Slim 3 14" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h2 class="laptop-title">Lenovo IdeaPad Slim 3 14"</h2>
+            <p class="laptop-specs">AMD Ryzen 3 • 8GB RAM • 128GB Storage • Up to 12 Hours Battery • Windows 11</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$597</span>
+              <a href="#product-lenovo-14" class="btn btn-secondary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. HIGH TIER: MacBook Air 13" -->
+        <div class="laptop-card" data-tier="high">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://www.jbhifi.com.au/cdn/shop/files/511615-Product-0-I-639081654810365175_grande.jpg?v=1772568726" 
+              alt="MacBook Air 13-inch" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">High Tier</span>
+              <span class="badge">Flagship Performance</span>
+            </div>
+            <h2 class="laptop-title">Apple MacBook Air 13" (Midnight)</h2>
+            <p class="laptop-specs">Apple M5 Chip • 16GB Unified Memory • 512GB Fast SSD • Touch ID</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$2,099</span>
+              <a href="#product-air" class="btn btn-primary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. CHEAP: HP Laptop 15 -->
+        <div class="laptop-card" data-tier="cheap">
+          <div class="laptop-img-wrap">
+            <img 
+              src="https://www.jbhifi.com.au/cdn/shop/files/840548-Product-0-I-639143989203211489.jpg?v=1778802191" 
+              alt="HP Laptop 15" 
+              loading="lazy"
+            />
+          </div>
+          <div class="laptop-info">
+            <div class="badge-row">
+              <span class="badge">Cheap Tier</span>
+              <span class="badge">Not Recommended</span>
+            </div>
+            <h2 class="laptop-title">HP Laptop 15-fd0943tu 15.6"</h2>
+            <p class="laptop-specs">Intel N150 Processor • 15.6" Full HD • 128GB Storage • Windows 11</p>
+            <div class="laptop-bottom">
+              <span class="laptop-price">A$379</span>
+              <a href="#product-hp" class="btn btn-secondary">View Details</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PAGE 2: MATCHER WIZARD
+       ======================================================== -->
+  <div id="view-matcher" class="page-view">
+    <div class="main-container">
+      
+      <div class="page-header">
+        <h1>Laptop Matcher</h1>
+        <p>Answer a few questions to find the ideal machine for your school needs.</p>
+      </div>
+
+      <div class="matcher-card">
+        
+        <!-- Filter 1: Subjects -->
+        <div class="matcher-group">
+          <label class="matcher-label">1. Subjects (Choose multiple)</label>
+          <div class="matcher-pills" id="subject-pills">
+            <button type="button" class="interactive-chip active" data-subject="general">General & Essays</button>
+            <button type="button" class="interactive-chip" data-subject="stem">Math & Science / STEM</button>
+            <button type="button" class="interactive-chip" data-subject="creative">Graphic Design & Art</button>
+            <button type="button" class="interactive-chip" data-subject="video">Video Editing & Animation</button>
+            <button type="button" class="interactive-chip" data-subject="coding">Coding & Software Dev</button>
+            <button type="button" class="interactive-chip" data-subject="music">Music & Audio</button>
+            <button type="button" class="interactive-chip" data-subject="business">Business & Economics</button>
+            <button type="button" class="interactive-chip" data-subject="cad">3D Modeling & CAD</button>
+            <button type="button" class="interactive-chip" data-subject="gaming">Gaming & Esports</button>
+          </div>
+        </div>
+
+        <!-- Filter 2: Battery -->
+        <div class="matcher-group">
+          <label class="matcher-label">2. Battery Life Priority</label>
+          <div class="matcher-pills" id="battery-pills">
+            <button type="button" class="interactive-chip" data-battery="basic">Standard (6 to 8 hrs)</button>
+            <button type="button" class="interactive-chip active" data-battery="allday">All-Day (12+ hrs)</button>
+          </div>
+        </div>
+
+        <!-- Filter 3: Budget -->
+        <div class="matcher-group">
+          <label class="matcher-label">3. Max Budget</label>
+          <div class="matcher-pills" id="budget-pills">
+            <button type="button" class="interactive-chip" data-budget="400">Under $500</button>
+            <button type="button" class="interactive-chip" data-budget="700">Under $800</button>
+            <button type="button" class="interactive-chip active" data-budget="1200">Under $1,100</button>
+            <button type="button" class="interactive-chip" data-budget="2500">$2,000+</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div id="matcher-output-container">
+          <!-- Populated by JavaScript -->
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PAGE 3: INFO & OS (EMBEDDED PREVIEWS)
+       ======================================================== -->
+  <div id="view-info" class="page-view">
+    <div class="main-container">
+      
+      <div class="page-header">
+        <h1>Info & Guidelines</h1>
+        <p>School software compatibility, longevity advice, and operating system overviews.</p>
+      </div>
+
+      <!-- School Support Block -->
+      <div class="info-block">
+        <h2>School Compatibility</h2>
+        <p class="info-lead">
+          Supported by school: <strong>macOS</strong> and <strong>Windows</strong>. Don't get Chromebooks, Googlebooks or other operating systems. Everything on this list is supported.
+        </p>
+
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.98rem;">
+          Both operating systems can do everything needed for school.
+        </p>
+
+        <div class="info-longevity-box">
+          To get a laptop that lasts from Year 7 to around Year 11–12, avoid Cheap and maybe Low Tier.
+        </div>
+
+        <!-- OS Comparison Cards with Direct Embedded Images -->
+        <div class="os-grid">
+          <!-- macOS -->
+          <div class="os-card">
+            <h3 class="os-card-title">macOS</h3>
+            <div class="os-card-img-wrap">
+              <img src="https://cdn.launchosapp.com/blog/apps-app_macOS27-m7ysrm.png" alt="macOS Preview" />
+            </div>
+            <p class="os-card-desc">
+              macOS is Apple's Unix-based operating system designed exclusively for Mac computers. It is easier to use, highly optimized, works seamlessly with Apple devices, and is best for creative workflows.
+            </p>
+          </div>
+
+          <!-- Windows -->
+          <div class="os-card">
+            <h3 class="os-card-title">Windows</h3>
+            <div class="os-card-img-wrap">
+              <img src="https://i.pcmag.com/imagery/reviews/00xBy0JjVybodfIwWxeGCkZ-24..v1637341645.png" alt="Windows Preview" />
+            </div>
+            <p class="os-card-desc">
+              Windows is Microsoft's operating system designed for unmatched hardware flexibility and software compatibility. It is best for office work, enterprise tools, and broad PC gaming support.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: ASUS VIVOBOOK GO 14 (LOW TIER)
+       ======================================================== -->
+  <div id="view-product-asus" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.jbhifi.com.au/products/asus-vivobook-go-14-full-hd-laptop-amd-athlon-silver128gb?store=75" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://www.jbhifi.com.au/cdn/shop/files/890900-Product-0-I-639149307603116841.jpg?v=1779668168" alt="Asus VivoBook Go 14" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h1>Asus VivoBook Go 14"</h1>
+            <p>A compact, lightweight 14-inch Windows laptop powered by AMD Athlon Silver, built for basic study sessions, web browsing, and portable everyday assignments.</p>
+            <div class="product-heading-price">A$499</div>
+            <a href="https://www.jbhifi.com.au/products/asus-vivobook-go-14-full-hd-laptop-amd-athlon-silver128gb?store=75" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on JB Hi-Fi</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Windows</div>
+          <div class="editorial-quote-text">Operating system by Microsoft. Runs nearly all apps. Made for work</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 8 Hours</div>
+          <div class="stat-title">Reliable Everyday Battery Life</div>
+          <div class="stat-desc">Solid battery life for a full day of lightweight school typing, document reviews, and study.</div>
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">AMD Athlon Silver Processor</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">14" Full HD (1920 x 1080) Compact Screen</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">128GB Storage</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Operating System</div>
+            <div class="spec-val">Windows 11 Home</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Form Factor</div>
+            <div class="spec-val">Portable 14-inch chassis suited for light backpacks</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Asus VivoBook Go 14"</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at JB Hi-Fi for A$499</div>
+          </div>
+          <a href="https://www.jbhifi.com.au/products/asus-vivobook-go-14-full-hd-laptop-amd-athlon-silver128gb?store=75" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: LENOVO IDEAPAD SLIM 3 14" (LOW TIER)
+       ======================================================== -->
+  <div id="view-product-lenovo-14" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.officeworks.com.au/shop/officeworks/p/lenovo-ideapad-slim-3-14-laptop-ryzen-3-8-128gb-lexn008sau" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Officeworks</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png" alt="Lenovo IdeaPad Slim 3 14" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h1>Lenovo IdeaPad Slim 3 14"</h1>
+            <p>A highly portable 14-inch Windows laptop offering impressive all-day battery life up to 12 hours, AMD Ryzen 3 performance, and 8GB RAM for everyday school productivity.</p>
+            <div class="product-heading-price">A$597</div>
+            <a href="https://www.officeworks.com.au/shop/officeworks/p/lenovo-ideapad-slim-3-14-laptop-ryzen-3-8-128gb-lexn008sau" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on Officeworks</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Windows</div>
+          <div class="editorial-quote-text">Operating system by Microsoft. Runs nearly all apps. Made for work</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 12 Hours</div>
+          <div class="stat-title">Long-Lasting School Battery Life</div>
+          <div class="stat-desc">Power through a full day of classes, typing, research, and homework on a single charge without packing a power brick.</div>
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">AMD Ryzen 3 Processor</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Memory</div>
+            <div class="spec-val">8GB RAM</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">128GB Storage</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">14" Full HD Display</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Battery Life</div>
+            <div class="spec-val">Up to 12 Hours</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Operating System</div>
+            <div class="spec-val">Windows 11 Home</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Lenovo IdeaPad Slim 3 14"</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at Officeworks for A$597</div>
+          </div>
+          <a href="https://www.officeworks.com.au/shop/officeworks/p/lenovo-ideapad-slim-3-14-laptop-ryzen-3-8-128gb-lexn008sau" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Officeworks</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: HP LAPTOP 15 (CHEAP)
+       ======================================================== -->
+  <div id="view-product-hp" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.jbhifi.com.au/products/hp-laptop-15-fd0943tu-15-6-full-hd-laptop-intel-n150128gb?ab_version=A" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://www.jbhifi.com.au/cdn/shop/files/840548-Product-0-I-639143989203211489.jpg?v=1778802191" alt="HP Laptop 15" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Cheap Tier</span>
+              <span class="badge">Not Recommended</span>
+            </div>
+            <h1>HP Laptop 15-fd0943tu 15.6"</h1>
+            <p>An entry-level budget Windows laptop. Due to limited processing speed and memory limits, it may feel sluggish under modern multi-tab school assignments and is not built for multi-year longevity.</p>
+            <div class="product-heading-price">A$379</div>
+            <a href="https://www.jbhifi.com.au/products/hp-laptop-15-fd0943tu-15-6-full-hd-laptop-intel-n150128gb?ab_version=A" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on JB Hi-Fi</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Windows</div>
+          <div class="editorial-quote-text">Operating system by Microsoft. Runs nearly all apps. Made for work</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 6 Hours</div>
+          <div class="stat-title">Basic Budget Battery Life</div>
+          <div class="stat-desc">Expect around 3 to 5 hours of continuous real-world use before needing the power adapter.</div>
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">15.6" Full HD (1920 x 1080) Anti-Glare</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">Intel Processor N150</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">128GB Internal Storage</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Operating System</div>
+            <div class="spec-val">Windows 11 Home</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Recommendation Note</div>
+            <div class="spec-val">Not recommended to last Year 7 through 11–12.</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">HP Laptop 15-fd0943tu</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at JB Hi-Fi for A$379</div>
+          </div>
+          <a href="https://www.jbhifi.com.au/products/hp-laptop-15-fd0943tu-15-6-full-hd-laptop-intel-n150128gb?ab_version=A" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: ACER ASPIRE LITE 15 (LOW TIER)
+       ======================================================== -->
+  <div id="view-product-acer" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.harveynorman.com.au/acer-aspire-lite-15-15-6-inch-ryzen-3-5400u-8gb-256gb-ssd-laptop.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Harvey Norman</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://cdn.shopify.com/s/files/1/0641/9388/8321/files/50094362_951283.png?v=1776232880" alt="Acer Aspire Lite 15" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Low Tier</span>
+            </div>
+            <h1>Acer Aspire Lite 15 15.6"</h1>
+            <p>A capable entry-level Windows machine with an AMD Ryzen processor, 8GB RAM, and AMD Radeon Vega graphics for everyday schoolwork, web browsing, and casual esports.</p>
+            <div class="product-heading-price">A$598</div>
+            <a href="https://www.harveynorman.com.au/acer-aspire-lite-15-15-6-inch-ryzen-3-5400u-8gb-256gb-ssd-laptop.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on Harvey Norman</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Windows</div>
+          <div class="editorial-quote-text">Operating system by Microsoft. Runs nearly all apps. Made for work</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 6 Hours</div>
+          <div class="stat-title">Standard Everyday Battery Life</div>
+          <div class="stat-desc">Sufficient battery endurance to handle document editing, web research, and light homework tasks before charging.</div>
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">AMD Ryzen 3 5400U</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Graphics</div>
+            <div class="spec-val">AMD Radeon Graphics (Supports casual esports / light gaming)</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Memory</div>
+            <div class="spec-val">8GB RAM</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">256GB SSD</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">15.6" Full HD Display</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Operating System</div>
+            <div class="spec-val">Windows 11 Home</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Acer Aspire Lite 15</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at Harvey Norman for A$598</div>
+          </div>
+          <a href="https://www.harveynorman.com.au/acer-aspire-lite-15-15-6-inch-ryzen-3-5400u-8gb-256gb-ssd-laptop.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Harvey Norman</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: MACBOOK NEO (MID TIER - RECOMMENDED)
+       ======================================================== -->
+  <div id="view-product-neo" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.jbhifi.com.au/products/apple-macbook-neo-13-inch-with-a18-pro-chip-256gb-8gb-indigo" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://www.jbhifi.com.au/cdn/shop/files/890863-Product-0-I-639082503603198021.jpg?v=1772653625" alt="MacBook Neo" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Mid Tier</span>
+              <span class="badge">★ Recommended Pick</span>
+            </div>
+            <h1>Apple MacBook Neo 13"</h1>
+            <p>The sweet spot. Instant wake, silent fanless efficiency, smooth multitasking with the A18 Pro chip, 3D/CAD support, and proven longevity built to last through high school.</p>
+            <div class="product-heading-price">A$1,049</div>
+            <a href="https://www.jbhifi.com.au/products/apple-macbook-neo-13-inch-with-a18-pro-chip-256gb-8gb-indigo" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on JB Hi-Fi</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">macOS</div>
+          <div class="editorial-quote-text">macOS. Easy to use. Runs all your go-to apps. Puts the fun in functional.</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 15 Hours</div>
+          <div class="stat-title">All-Day Battery Life</div>
+          <div class="stat-desc">Leave the charger at home. Power through a full day of school, classes, and homework with ease.</div>
+        </div>
+
+        <div class="gallery-stack">
+          <img 
+            src="https://www.apple.com/v/macbook-neo/b/images/overview/highlights/highlights_battery__fu65vu9o4te2_large.jpg" 
+            alt="MacBook Neo Battery"
+            loading="lazy" 
+          />
+          <img 
+            src="https://www.apple.com/v/macbook-neo/b/images/overview/product-stories/apple-intelligence/ai_apps__duxcxyziriie_large.jpg" 
+            alt="MacBook Neo Intelligence"
+            loading="lazy" 
+          />
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">Apple A18 Pro Chip</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Unified Memory</div>
+            <div class="spec-val">8GB Unified Memory</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">256GB Fast SSD</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">13-inch Retina Display with True Tone</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Biometrics</div>
+            <div class="spec-val">Touch ID Optional</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Longevity Rating</div>
+            <div class="spec-val">Ideal for Year 7 through Year 11–12.</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Apple MacBook Neo 13"</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at JB Hi-Fi for A$1,049</div>
+          </div>
+          <a href="https://www.jbhifi.com.au/products/apple-macbook-neo-13-inch-with-a18-pro-chip-256gb-8gb-indigo" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: LENOVO IDEAPAD SLIM 3 15.6" (MID TIER)
+       ======================================================== -->
+  <div id="view-product-lenovo" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.harveynorman.com.au/lenovo-ideapad-slim-3-15-6-inch-ryzen-5-5625u-16gb-512gb-ssd-laptop-arctic-grey.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Harvey Norman</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png" alt="Lenovo IdeaPad Slim 3 15.6" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">Mid Tier</span>
+            </div>
+            <h1>Lenovo IdeaPad Slim 3 15.6"</h1>
+            <p>An outstanding Windows machine featuring an AMD Ryzen 5 processor, generous 16GB memory, and 512GB SSD storage for effortless multi-app schoolwork, gaming, and longevity.</p>
+            <div class="product-heading-price">A$998</div>
+            <a href="https://www.harveynorman.com.au/lenovo-ideapad-slim-3-15-6-inch-ryzen-5-5625u-16gb-512gb-ssd-laptop-arctic-grey.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on Harvey Norman</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Windows</div>
+          <div class="editorial-quote-text">Operating system by Microsoft. Runs nearly all apps. Made for work</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 8.5 Hours</div>
+          <div class="stat-title">Everyday School Battery Life</div>
+          <div class="stat-desc">Reliable battery endurance to get through daily classes, lectures, homework, and web research.</div>
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">AMD Ryzen 5 5625U (6 Cores)</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Memory</div>
+            <div class="spec-val">16GB RAM</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">512GB High-Speed SSD</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">15.6" Full HD (1920 x 1080) Anti-Glare</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Finish</div>
+            <div class="spec-val">Arctic Grey</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Operating System</div>
+            <div class="spec-val">Windows 11 Home</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Lenovo IdeaPad Slim 3 15.6"</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at Harvey Norman for A$998</div>
+          </div>
+          <a href="https://www.harveynorman.com.au/lenovo-ideapad-slim-3-15-6-inch-ryzen-5-5625u-16gb-512gb-ssd-laptop-arctic-grey.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on Harvey Norman</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PRODUCT PAGE: MACBOOK AIR M5 (HIGH TIER)
+       ======================================================== -->
+  <div id="view-product-air" class="page-view">
+    <div class="product-view-layout">
+      <div class="subpage-bar">
+        <div class="subpage-bar-inner">
+          <a href="#home" class="btn-back">Back to Laptops</a>
+          <a href="https://www.jbhifi.com.au/products/apple-macbook-air-13-inch-with-m5-chip-512gb-16gb-midnight" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+
+      <div class="product-view-content">
+        <div class="product-hero-grid">
+          <div class="product-media-box">
+            <img src="https://www.jbhifi.com.au/cdn/shop/files/511615-Product-0-I-639081654810365175_grande.jpg?v=1772568726" alt="MacBook Air M5" />
+          </div>
+          <div class="product-heading">
+            <div class="badge-row">
+              <span class="badge">High Tier</span>
+              <span class="badge">Flagship Performance</span>
+            </div>
+            <h1>Apple MacBook Air 13"</h1>
+            <p>Pro-grade performance in an ultra-slim form factor. Equipped with the next-generation Apple M5 chip, Touch ID built-in, and upgraded 16GB memory for effortless creative workflows, 3D CAD modeling, and maximum longevity.</p>
+            <div class="product-heading-price">A$2,099</div>
+            <a href="https://www.jbhifi.com.au/products/apple-macbook-air-13-inch-with-m5-chip-512gb-16gb-midnight" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 12px 28px;">Buy on JB Hi-Fi</a>
+          </div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">Apple M5 Performance</div>
+          <div class="editorial-quote-text">The M5 chip brings even more speed and fluidity to everything you do, like seamless switching between loads of apps and tabs, editing 4K video or doing intense schoolwork. All with a silent, fanless design.</div>
+        </div>
+
+        <div class="editorial-quote">
+          <div class="editorial-quote-title">macOS</div>
+          <div class="editorial-quote-text">macOS. Easy to use. Runs all your go-to apps. Puts the fun in functional.</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-number">Up to 18 Hours</div>
+          <div class="stat-title">Pro Efficiency & Extreme Endurance</div>
+          <div class="stat-desc">Handles intense 3D modeling, 4K video editing, multitasking, coding, and heavy research without draining the battery.</div>
+        </div>
+
+        <div class="gallery-stack">
+          <img 
+            src="https://www.apple.com/v/macbook-air/z/images/overview/performance/performance_hero_static__fmu2opq0522q_large.jpg" 
+            alt="MacBook Air M5 Performance"
+            loading="lazy" 
+          />
+          <img 
+            src="https://www.apple.com/v/macbook-air/z/images/overview/performance/performance_battery__46bh380ljkym_large.jpg" 
+            alt="MacBook Air Battery"
+            loading="lazy" 
+          />
+        </div>
+
+        <div class="spec-table">
+          <div class="spec-row">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">Apple M5 Chip</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Unified Memory</div>
+            <div class="spec-val">16GB Unified Memory</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Storage</div>
+            <div class="spec-val">512GB Fast SSD</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Biometrics</div>
+            <div class="spec-val">Touch ID Built-in</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Display</div>
+            <div class="spec-val">13.6-inch Liquid Retina Display</div>
+          </div>
+          <div class="spec-row">
+            <div class="spec-label">Finish</div>
+            <div class="spec-val">Midnight Anodized Aluminum</div>
+          </div>
+        </div>
+
+        <div class="bottom-cta-box">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 800;">Apple MacBook Air 13" (Midnight)</div>
+            <div style="color: var(--text-muted); font-size: 0.92rem;">Available at JB Hi-Fi for A$2,099</div>
+          </div>
+          <a href="https://www.jbhifi.com.au/products/apple-macbook-air-13-inch-with-m5-chip-512gb-16gb-midnight" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Buy on JB Hi-Fi</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       ROUTER & INTERACTIVE SCRIPTS
+       ======================================================== -->
+  <script>
+    // --- 1. Router Logic ---
+    function renderRoute() {
+      const hash = window.location.hash || '#home';
+      const views = document.querySelectorAll('.page-view');
+      
+      views.forEach(v => v.classList.remove('active'));
+
+      // Update Nav active classes
+      const desktopTabs = document.querySelectorAll('.nav-tab');
+      const mobileTabs = document.querySelectorAll('.sidebar-link');
+      desktopTabs.forEach(t => t.classList.remove('active'));
+      mobileTabs.forEach(t => t.classList.remove('active'));
+
+      if (hash === '#matcher') {
+        document.getElementById('view-matcher').classList.add('active');
+        document.getElementById('desktop-tab-matcher')?.classList.add('active');
+        document.getElementById('mob-tab-matcher')?.classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#info') {
+        document.getElementById('view-info').classList.add('active');
+        document.getElementById('desktop-tab-info')?.classList.add('active');
+        document.getElementById('mob-tab-info')?.classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-hp') {
+        document.getElementById('view-product-hp').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-acer') {
+        document.getElementById('view-product-acer').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-asus') {
+        document.getElementById('view-product-asus').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-lenovo-14') {
+        document.getElementById('view-product-lenovo-14').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-neo') {
+        document.getElementById('view-product-neo').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-lenovo') {
+        document.getElementById('view-product-lenovo').classList.add('active');
+        window.scrollTo(0, 0);
+      } else if (hash === '#product-air') {
+        document.getElementById('view-product-air').classList.add('active');
+        window.scrollTo(0, 0);
+      } else {
+        // Default #home
+        document.getElementById('view-home').classList.add('active');
+        document.getElementById('desktop-tab-home')?.classList.add('active');
+        document.getElementById('mob-tab-home')?.classList.add('active');
+        window.scrollTo(0, 0);
+      }
+    }
+
+    window.addEventListener('hashchange', renderRoute);
+    window.addEventListener('DOMContentLoaded', () => {
+      renderRoute();
+      updateRecommendation();
+    });
+
+    // --- 2. Mobile Sidebar Toggle ---
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const openSidebarBtn = document.getElementById('open-sidebar-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+    function openSidebar() {
+      sidebarOverlay.classList.add('open');
+    }
+    function closeSidebar() {
+      sidebarOverlay.classList.remove('open');
+    }
+
+    openSidebarBtn?.addEventListener('click', openSidebar);
+    closeSidebarBtn?.addEventListener('click', closeSidebar);
+    sidebarOverlay?.addEventListener('click', (e) => {
+      if (e.target === sidebarOverlay) closeSidebar();
+    });
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', closeSidebar);
+    });
+
+    // --- 3. Catalog Tier Filter Chips (Cheapest to Top) ---
+    document.querySelectorAll('#tier-filter-bar .filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#tier-filter-bar .filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const filter = chip.dataset.filter;
+        
+        document.querySelectorAll('#laptop-card-container .laptop-card').forEach(card => {
+          if (filter === 'all' || card.dataset.tier === filter) {
+            card.style.display = 'grid';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // --- 4. Interactive Matcher Logic ---
+    function updateRecommendation() {
+      const activeSubjects = Array.from(document.querySelectorAll('#subject-pills .interactive-chip.active')).map(b => b.dataset.subject);
+      const activeBattery = document.querySelector('#battery-pills .interactive-chip.active')?.dataset.battery || 'allday';
+      const budget = parseInt(document.querySelector('#budget-pills .interactive-chip.active')?.dataset.budget || '1200', 10);
+
+      const isGaming = activeSubjects.includes('gaming');
+      const isMacPreferred = !isGaming && (activeSubjects.includes('creative') || activeSubjects.includes('video') || activeSubjects.includes('cad') || activeSubjects.includes('coding') || activeSubjects.includes('music'));
+      const isWindowsHeavy = activeSubjects.includes('business') || isGaming;
+
+      const container = document.getElementById('matcher-output-container');
+
+      // Conflict detection: Heavy 3D/Video on strictly under $500 budget
+      if ((activeSubjects.includes('video') || activeSubjects.includes('cad')) && budget < 500) {
+        container.innerHTML = `
+          <div class="matcher-result-wrap" style="border-color: #cbd5e1;">
+            <div class="matcher-result-body">
+              <div style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">No Direct Match For These Filters</div>
+              <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.55;">
+                There is currently no laptop under $500 that comfortably handles 3D Modeling/CAD or 4K Video. 
+                We recommend increasing your budget to consider the <strong>MacBook Neo (A$1,049)</strong> or <strong>MacBook Air M5 (A$2,099)</strong>.
+              </p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let match = {
+        tag: '★ Best Overall Recommendation',
+        title: 'Apple MacBook Neo 13"',
+        reason: 'The ideal sweet spot. 15-hour all-day battery life, fast A18 Pro chip, 3D CAD/creative power, and proven longevity to last Year 7 through 11–12.',
+        price: 'A$1,049',
+        img: 'https://www.jbhifi.com.au/cdn/shop/files/890863-Product-0-I-639082503603198021.jpg?v=1772653625',
+        link: '#product-neo'
+      };
+
+      if (budget <= 400) {
+        match = {
+          tag: 'Budget Choice (Not Recommended For Longevity)',
+          title: 'HP Laptop 15-fd0943tu',
+          reason: 'Fits a strictly limited budget for basic word processing, but will feel slow and is not recommended to last multiple school years.',
+          price: 'A$379',
+          img: 'https://www.jbhifi.com.au/cdn/shop/files/840548-Product-0-I-639143989203211489.jpg?v=1778802191',
+          link: '#product-hp'
+        };
+      } else if (budget <= 700) {
+        if (isGaming) {
+          match = {
+            tag: 'Entry Level Match (Gaming & Esports)',
+            title: 'Acer Aspire Lite 15',
+            reason: 'AMD Ryzen 3 processor with integrated Radeon graphics on Windows to support light gaming, esports, and daily school coursework.',
+            price: 'A$598',
+            img: 'https://cdn.shopify.com/s/files/1/0641/9388/8321/files/50094362_951283.png?v=1776232880',
+            link: '#product-acer'
+          };
+        } else if (activeBattery === 'allday') {
+          match = {
+            tag: 'Best Battery in Low Tier',
+            title: 'Lenovo IdeaPad Slim 3 14"',
+            reason: 'Impressive up to 12-hour battery endurance in a compact 14" chassis with AMD Ryzen 3 and 8GB RAM for all-day schoolwork under $600.',
+            price: 'A$597',
+            img: 'https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png',
+            link: '#product-lenovo-14'
+          };
+        } else {
+          match = {
+            tag: 'Entry Level Match',
+            title: 'Acer Aspire Lite 15',
+            reason: 'Decent 8GB memory and AMD Ryzen power under $600. Great for homework, multi-tab browsing, and casual esports.',
+            price: 'A$598',
+            img: 'https://cdn.shopify.com/s/files/1/0641/9388/8321/files/50094362_951283.png?v=1776232880',
+            link: '#product-acer'
+          };
+        }
+      } else if (budget >= 2000 && isMacPreferred) {
+        match = {
+          tag: '★ Ultimate Flagship Performance Match',
+          title: 'Apple MacBook Air 13" (M5)',
+          reason: 'Next-gen M5 speed, 3D CAD modeling readiness, Touch ID built-in, 16GB memory, and 18-hour battery for effortless high school and university longevity.',
+          price: 'A$2,099',
+          img: 'https://www.jbhifi.com.au/cdn/shop/files/511615-Product-0-I-639081654810365175_grande.jpg?v=1772568726',
+          link: '#product-air'
+        };
+      } else if (isWindowsHeavy) {
+        match = {
+          tag: 'Mid Tier Windows Recommendation (Gaming & Productivity)',
+          title: 'Lenovo IdeaPad Slim 3 15.6"',
+          reason: 'Equipped with 16GB RAM and AMD Ryzen 5 on Windows for broad PC gaming support, esports compatibility, and fluid multitasking.',
+          price: 'A$998',
+          img: 'https://p1-ofp.static.pub//fes/cms/2024/09/13/ze1jsaaq3mhn9hp4dly1vshr0iy095312626.png',
+          link: '#product-lenovo'
+        };
+      }
+
+      container.innerHTML = `
+        <div class="matcher-result-wrap">
+          <div class="matcher-result-img">
+            <img src="${match.img}" alt="${match.title}" />
+          </div>
+          <div class="matcher-result-body">
+            <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2px;">${match.tag}</div>
+            <h3 style="font-size: 1.35rem; font-weight: 900; margin-bottom: 4px;">${match.title}</h3>
+            <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 14px;">${match.reason}</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 1.35rem; font-weight: 900;">${match.price}</span>
+              <a href="${match.link}" class="btn btn-primary">View Details</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Interactive Chip Handlers
+    document.querySelectorAll('#subject-pills .interactive-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        if (!document.querySelectorAll('#subject-pills .interactive-chip.active').length) {
+          btn.classList.add('active');
+        }
+        updateRecommendation();
+      });
+    });
+
+    ['#battery-pills', '#budget-pills'].forEach(groupId => {
+      document.querySelectorAll(`${groupId} .interactive-chip`).forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll(`${groupId} .interactive-chip`).forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          updateRecommendation();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
